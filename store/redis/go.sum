@@ -1,0 +1,3 @@
+github.com/go-redis/redis v6.15.7+incompatible h1:3skhDh95XQMpnqeqNftPkQD9jL9e5e36z/1SUm6dy1U=
+github.com/go-redis/redis v6.15.7+incompatible/go.mod h1:NAIEuMOZ/fxfXJIrKDQDz8wamY7mA7PouImQ2Jvg6kA=
+github.com/jasonjoo2010/goschedule v0.0.0-20200403085006-b1bfc107ee0f h1:AJBs1Sjo3m228snT927sbOuQGGwA70QQ7VP7SC5PXW0=
