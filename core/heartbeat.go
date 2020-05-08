@@ -1,6 +1,6 @@
 package core
 
-func (s *ScheduleManager) reregisterInfo() {
+func (s *ScheduleManager) registerInfo() {
 	scheduler, err := s.store.GetScheduler(s.scheduler.Id)
 	if err == nil {
 		// disabled support
@@ -10,16 +10,23 @@ func (s *ScheduleManager) reregisterInfo() {
 	}
 	s.scheduler.LastHeartbeat = s.store.Time()
 	s.store.RegisterScheduler(s.scheduler)
-	if s.scheduler.Enabled == false {
-		// TODO stop all servers locally
-	}
 }
 
 func (s *ScheduleManager) heartbeat() {
 	// stop handler
 	defer func() { s.shutdownNotifier <- 1 }()
 	for !s.needStop {
-		go s.reregisterInfo()
-		s.delay(s.heartbeatRate)
+		s.registerInfo()
+		s.delay(s.heartbeatInterval)
 	}
+
+	// unregister runtimes from store when stop
+	strategies, err := s.store.GetStrategies()
+	if err == nil {
+		for _, strategy := range strategies {
+			s.store.RemoveStrategyRuntime(strategy.Id, s.scheduler.Id)
+		}
+	}
+	// unregister self from store when stop
+	s.store.UnregisterScheduler(s.scheduler.Id)
 }

@@ -5,13 +5,16 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/jasonjoo2010/enhanced-utils/concurrent/distlock"
+	lockstore "github.com/jasonjoo2010/enhanced-utils/concurrent/distlock/mock"
 	"github.com/jasonjoo2010/goschedule/core/definition"
 	"github.com/jasonjoo2010/goschedule/store"
 )
 
 type MemoryStore struct {
 	sequence   uint64
-	lock       *sync.Mutex // because is in-memory store so only one lock is shared currently is enough i think
+	mutex      *sync.Mutex
+	lock       *distlock.DistLock
 	tasks      map[string]*definition.Task
 	strategies map[string]*definition.Strategy
 	schedulers map[string]*definition.Scheduler
@@ -24,12 +27,17 @@ type runtimeKey struct {
 
 func New() *MemoryStore {
 	return &MemoryStore{
-		lock:       &sync.Mutex{},
+		mutex:      &sync.Mutex{},
+		lock:       distlock.NewMutex("", 60*time.Second, lockstore.New()),
 		tasks:      make(map[string]*definition.Task),
 		strategies: make(map[string]*definition.Strategy),
 		schedulers: make(map[string]*definition.Scheduler),
 		runtimes:   make(map[runtimeKey]*definition.StrategyRuntime),
 	}
+}
+
+func (s *MemoryStore) Lock() *distlock.DistLock {
+	return s.lock
 }
 
 func (s *MemoryStore) Name() string {
@@ -53,48 +61,52 @@ func (s *MemoryStore) Sequence() (uint64, error) {
 //
 
 func (s *MemoryStore) GetTask(id string) (*definition.Task, error) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 	task, ok := s.tasks[id]
 	if ok {
-		return task, nil
+		t := *task
+		return &t, nil
 	}
 	return nil, store.NotExist
 }
 
 func (s *MemoryStore) GetTasks() ([]*definition.Task, error) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 	list := make([]*definition.Task, 0, len(s.tasks))
-	for _, t := range s.tasks {
-		list = append(list, t)
+	for _, task := range s.tasks {
+		t := *task
+		list = append(list, &t)
 	}
 	return list, nil
 }
 
 func (s *MemoryStore) CreateTask(task *definition.Task) error {
-	s.lock.Lock()
-	defer s.lock.Unlock()
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 	if _, ok := s.tasks[task.Id]; ok {
 		return store.AlreadyExist
 	}
-	s.tasks[task.Id] = task
+	t := *task
+	s.tasks[task.Id] = &t
 	return nil
 }
 
 func (s *MemoryStore) UpdateTask(task *definition.Task) error {
-	s.lock.Lock()
-	defer s.lock.Unlock()
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 	if _, ok := s.tasks[task.Id]; !ok {
 		return store.NotExist
 	}
-	s.tasks[task.Id] = task
+	t := *task
+	s.tasks[task.Id] = &t
 	return nil
 }
 
 func (s *MemoryStore) DeleteTask(id string) error {
-	s.lock.Lock()
-	defer s.lock.Unlock()
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 	if _, ok := s.tasks[id]; !ok {
 		return store.NotExist
 	}
@@ -107,48 +119,52 @@ func (s *MemoryStore) DeleteTask(id string) error {
 //
 
 func (s *MemoryStore) GetStrategy(id string) (*definition.Strategy, error) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 	strategy, ok := s.strategies[id]
 	if ok {
-		return strategy, nil
+		copyStrategy := *strategy
+		return &copyStrategy, nil
 	}
 	return nil, store.NotExist
 }
 
 func (s *MemoryStore) GetStrategies() ([]*definition.Strategy, error) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 	list := make([]*definition.Strategy, 0, len(s.strategies))
-	for _, t := range s.strategies {
-		list = append(list, t)
+	for _, strategy := range s.strategies {
+		copyStrategy := *strategy
+		list = append(list, &copyStrategy)
 	}
 	return list, nil
 }
 
 func (s *MemoryStore) CreateStrategy(strategy *definition.Strategy) error {
-	s.lock.Lock()
-	defer s.lock.Unlock()
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 	if _, ok := s.strategies[strategy.Id]; ok {
 		return store.AlreadyExist
 	}
-	s.strategies[strategy.Id] = strategy
+	copyStrategy := *strategy
+	s.strategies[strategy.Id] = &copyStrategy
 	return nil
 }
 
 func (s *MemoryStore) UpdateStrategy(strategy *definition.Strategy) error {
-	s.lock.Lock()
-	defer s.lock.Unlock()
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 	if _, ok := s.strategies[strategy.Id]; !ok {
 		return store.NotExist
 	}
-	s.strategies[strategy.Id] = strategy
+	copyStrategy := *strategy
+	s.strategies[strategy.Id] = &copyStrategy
 	return nil
 }
 
 func (s *MemoryStore) DeleteStrategy(id string) error {
-	s.lock.Lock()
-	defer s.lock.Unlock()
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 	if _, ok := s.strategies[id]; !ok {
 		return store.NotExist
 	}
@@ -162,37 +178,40 @@ func (s *MemoryStore) DeleteStrategy(id string) error {
 //
 
 func (s *MemoryStore) GetStrategyRuntime(strategyId, schedulerId string) (*definition.StrategyRuntime, error) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 	t, ok := s.runtimes[runtimeKey{strategyId, schedulerId}]
 	if ok {
-		return t, nil
+		r := *t
+		return &r, nil
 	}
 	return nil, store.NotExist
 }
 
 func (s *MemoryStore) GetStrategyRuntimes(strategyId string) ([]*definition.StrategyRuntime, error) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-	arr := make([]*definition.StrategyRuntime, 1)
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	arr := make([]*definition.StrategyRuntime, 0, 1)
 	for k, v := range s.runtimes {
 		if k.StrategyId == strategyId {
-			arr = append(arr, v)
+			r := *v
+			arr = append(arr, &r)
 		}
 	}
 	return arr, nil
 }
 
 func (s *MemoryStore) SetStrategyRuntime(runtime *definition.StrategyRuntime) error {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-	s.runtimes[runtimeKey{runtime.StrategyId, runtime.SchedulerId}] = runtime
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	r := *runtime
+	s.runtimes[runtimeKey{runtime.StrategyId, runtime.SchedulerId}] = &r
 	return nil
 }
 
 func (s *MemoryStore) RemoveStrategyRuntime(strategyId, schedulerId string) error {
-	s.lock.Lock()
-	defer s.lock.Unlock()
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 	delete(s.runtimes, runtimeKey{strategyId, schedulerId})
 	return nil
 }
@@ -201,33 +220,41 @@ func (s *MemoryStore) RemoveStrategyRuntime(strategyId, schedulerId string) erro
 // Scheduler(Machine) related
 //
 
-func (s *MemoryStore) RegisterScheduler(scheduler *definition.Scheduler) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-	s.schedulers[scheduler.Id] = scheduler
+func (s *MemoryStore) RegisterScheduler(scheduler *definition.Scheduler) error {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	copyScheduler := *scheduler
+	s.schedulers[scheduler.Id] = &copyScheduler
+	return nil
 }
-func (s *MemoryStore) UnregisterScheduler(id string) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
+func (s *MemoryStore) UnregisterScheduler(id string) error {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	if _, ok := s.schedulers[id]; !ok {
+		return store.NotExist
+	}
 	delete(s.schedulers, id)
+	return nil
 }
 
 func (s *MemoryStore) GetScheduler(id string) (*definition.Scheduler, error) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 	scheduler, ok := s.schedulers[id]
 	if ok {
-		return scheduler, nil
+		copyScheduler := *scheduler
+		return &copyScheduler, nil
 	}
 	return nil, store.NotExist
 }
 
-func (s *MemoryStore) GetSchedulers() []*definition.Scheduler {
-	s.lock.Lock()
-	defer s.lock.Unlock()
+func (s *MemoryStore) GetSchedulers() ([]*definition.Scheduler, error) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 	list := make([]*definition.Scheduler, 0, len(s.schedulers))
 	for _, t := range s.schedulers {
-		list = append(list, t)
+		copyScheduler := *t
+		list = append(list, &copyScheduler)
 	}
-	return list
+	return list, nil
 }

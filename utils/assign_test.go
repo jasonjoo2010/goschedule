@@ -3,6 +3,7 @@ package utils
 import (
 	"testing"
 
+	"github.com/jasonjoo2010/goschedule/core/definition"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -29,4 +30,54 @@ func TestAssignWorkers(t *testing.T) {
 	assert.Equal(t, []int{2, 2, 1, 1, 1, 1, 1, 1}, AssignWorkers(8, 10, 3))
 	assert.Equal(t, []int{2, 1, 1, 1, 1, 1, 1, 1, 1}, AssignWorkers(9, 10, 3))
 	assert.Equal(t, []int{1, 1, 1, 1, 1, 1, 1, 1, 1, 1}, AssignWorkers(10, 10, 3))
+}
+
+func TestCanSchedule(t *testing.T) {
+	assert.True(t, CanSchedule([]string{"127.0.0.1"}, "", "192.168.123.1"))
+	assert.True(t, CanSchedule([]string{"localhost"}, "", "192.168.123.1"))
+	assert.True(t, CanSchedule([]string{"127.0.0.1"}, "demo", ""))
+	assert.True(t, CanSchedule([]string{"localhost"}, "demo", ""))
+
+	assert.False(t, CanSchedule([]string{}, "", "192.168.123.1"))
+	assert.False(t, CanSchedule([]string{}, "demo", ""))
+
+	assert.False(t, CanSchedule([]string{"demo1", "demo2"}, "demo", ""))
+	assert.False(t, CanSchedule([]string{"demo1", "demo2"}, "demo", "192.168.0.1"))
+	assert.True(t, CanSchedule([]string{"demo1", "demo2"}, "demo1", "192.168.0.1"))
+	assert.True(t, CanSchedule([]string{"demo1", "demo2", "192.168.0.1"}, "demo", "192.168.0.1"))
+}
+
+func TestSortRuntimesWithShuffle(t *testing.T) {
+	runtimes := make([]*definition.StrategyRuntime, 5)
+	runtimes[0] = &definition.StrategyRuntime{
+		SchedulerId:  "A",
+		StrategyId:   "S",
+		RequestedNum: 0,
+	}
+	runtimes[1] = &definition.StrategyRuntime{
+		SchedulerId:  "B",
+		StrategyId:   "S",
+		RequestedNum: 2,
+	}
+	runtimes[2] = &definition.StrategyRuntime{
+		SchedulerId:  "C",
+		StrategyId:   "S",
+		RequestedNum: 0,
+	}
+	runtimes[3] = &definition.StrategyRuntime{
+		SchedulerId:  "D",
+		StrategyId:   "S",
+		RequestedNum: 2,
+	}
+	runtimes[4] = &definition.StrategyRuntime{
+		SchedulerId:  "E",
+		StrategyId:   "S",
+		RequestedNum: 0,
+	}
+
+	SortRuntimesWithShuffle(runtimes)
+
+	for i := 1; i < len(runtimes); i++ {
+		assert.GreaterOrEqual(t, runtimes[i-1].RequestedNum, runtimes[i].RequestedNum)
+	}
 }

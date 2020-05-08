@@ -6,10 +6,11 @@ import (
 	"math"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/go-redis/redis"
+	"github.com/jasonjoo2010/enhanced-utils/concurrent/distlock"
+	lockstore "github.com/jasonjoo2010/enhanced-utils/concurrent/distlock/redis"
 	"github.com/jasonjoo2010/goschedule/core/definition"
 	"github.com/jasonjoo2010/goschedule/store"
 )
@@ -34,7 +35,7 @@ type RedisStoreConfig struct {
 type RedisStore struct {
 	client redis.UniversalClient
 	prefix string
-	lock   *sync.Mutex
+	lock   *distlock.DistLock
 }
 
 func NewFromConfig(config *RedisStoreConfig) *RedisStore {
@@ -52,6 +53,7 @@ func NewFromConfig(config *RedisStoreConfig) *RedisStore {
 	return &RedisStore{
 		client: client,
 		prefix: config.Prefix,
+		lock:   distlock.NewMutex(config.Prefix, 60*time.Second, lockstore.New(config.Addrs)),
 	}
 }
 
@@ -93,6 +95,21 @@ func parseStrategy(str string, err error) (*definition.Strategy, error) {
 	return &strategy, nil
 }
 
+func parseRuntime(str string, err error) (*definition.StrategyRuntime, error) {
+	if err != nil && !strings.Contains(err.Error(), "redis: nil") {
+		return nil, err
+	}
+	if str == "" {
+		return nil, store.NotExist
+	}
+	var runtime definition.StrategyRuntime
+	err = json.Unmarshal([]byte(str), &runtime)
+	if err != nil {
+		return nil, err
+	}
+	return &runtime, nil
+}
+
 func parseScheduler(str string, err error) (*definition.Scheduler, error) {
 	if err != nil && !strings.Contains(err.Error(), "redis: nil") {
 		return nil, err
@@ -129,6 +146,10 @@ func (s *RedisStore) keySchedulers() string {
 
 func (s *RedisStore) keyRuntimes(strategyId string) string {
 	return s.key("runtimes/" + strategyId)
+}
+
+func (s *RedisStore) Lock() *distlock.DistLock {
+	return s.lock
 }
 
 func (s *RedisStore) Name() string {
@@ -298,39 +319,64 @@ func (s *RedisStore) DeleteStrategy(id string) error {
 //
 
 func (s *RedisStore) GetStrategyRuntime(strategyId, schedulerId string) (*definition.StrategyRuntime, error) {
-
+	key := s.keyRuntimes(strategyId)
+	return parseRuntime(s.client.HGet(key, schedulerId).Result())
 }
 
 func (s *RedisStore) GetStrategyRuntimes(strategyId string) ([]*definition.StrategyRuntime, error) {
-
+	key := s.keyRuntimes(strategyId)
+	valMap, err := s.client.HGetAll(key).Result()
+	if err != nil {
+		return nil, err
+	}
+	list := make([]*definition.StrategyRuntime, 0, len(valMap))
+	for _, v := range valMap {
+		runtime, err := parseRuntime(v, err)
+		if err != nil {
+			// ignore
+			continue
+		}
+		list = append(list, runtime)
+	}
+	return list, nil
 }
 
 func (s *RedisStore) SetStrategyRuntime(runtime *definition.StrategyRuntime) error {
-
+	key := s.keyRuntimes(runtime.StrategyId)
+	data, err := json.Marshal(runtime)
+	if err != nil {
+		return err
+	}
+	_, err = s.client.HSet(key, runtime.SchedulerId, string(data)).Result()
+	return err
 }
 
 func (s *RedisStore) RemoveStrategyRuntime(strategyId, schedulerId string) error {
 	key := s.keyRuntimes(strategyId)
+	_, err := s.client.HDel(key, schedulerId).Result()
+	return err
 }
 
 //
 // Scheduler(Machine) related
 //
 
-func (s *RedisStore) RegisterScheduler(scheduler *definition.Scheduler) {
+func (s *RedisStore) RegisterScheduler(scheduler *definition.Scheduler) error {
 	key := s.keySchedulers()
 	data, err := json.Marshal(scheduler)
 	if err != nil {
 		// Now just ignore it
-		return
+		return errors.New("Serialize scheduler object failed")
 	}
 	s.client.HSet(key, scheduler.Id, string(data)).Result()
 	// XXX: Runtime operations registering migrated to upper logic
+	return nil
 }
-func (s *RedisStore) UnregisterScheduler(id string) {
+func (s *RedisStore) UnregisterScheduler(id string) error {
 	key := s.keySchedulers()
 	// XXX: remove strategy runtime binded to this scheduler
 	s.client.HDel(key, id)
+	return nil
 }
 
 func (s *RedisStore) GetScheduler(id string) (*definition.Scheduler, error) {
@@ -338,13 +384,13 @@ func (s *RedisStore) GetScheduler(id string) (*definition.Scheduler, error) {
 	return parseScheduler(s.client.HGet(key, id).Result())
 }
 
-func (s *RedisStore) GetSchedulers() []*definition.Scheduler {
+func (s *RedisStore) GetSchedulers() ([]*definition.Scheduler, error) {
 	cur := uint64(0)
 	key := s.keySchedulers()
 	size := s.client.HLen(key).Val()
 	page := int64(20)
 	if size < 1 {
-		return []*definition.Scheduler{}
+		return []*definition.Scheduler{}, nil
 	}
 	list := make([]*definition.Scheduler, 0, size)
 	keys_visited := make(map[string]bool)
@@ -372,5 +418,5 @@ func (s *RedisStore) GetSchedulers() []*definition.Scheduler {
 		}
 		cur = c
 	}
-	return list
+	return list, nil
 }

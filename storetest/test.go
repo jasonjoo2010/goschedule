@@ -160,17 +160,106 @@ func DoTestStrategy(t *testing.T, s store.Store) {
 	assert.Equal(t, store.NotExist, err)
 }
 
+func DoTestStrategyRuntime(t *testing.T, s store.Store) {
+	runtimeOri1 := &definition.StrategyRuntime{
+		StrategyId:  "strategy1",
+		SchedulerId: "scheduler1",
+	}
+	runtimeOri2 := &definition.StrategyRuntime{
+		StrategyId:  "strategy1",
+		SchedulerId: "scheduler2",
+	}
+	runtimeOri3 := &definition.StrategyRuntime{
+		StrategyId:  "strategy1",
+		SchedulerId: "scheduler3",
+	}
+	runtimeOri4 := &definition.StrategyRuntime{
+		StrategyId:  "strategy2",
+		SchedulerId: "scheduler1",
+	}
+	runtimeOri5 := &definition.StrategyRuntime{
+		StrategyId:  "strategy2",
+		SchedulerId: "scheduler2",
+	}
+
+	// try to fetch not existed runtime
+	runtime, err := s.GetStrategyRuntime(runtimeOri1.StrategyId, runtimeOri1.SchedulerId)
+	assert.Nil(t, runtime)
+	assert.Equal(t, store.NotExist, err)
+
+	// try to delete not existed runtime
+	err = s.RemoveStrategyRuntime(runtimeOri1.StrategyId, runtimeOri1.SchedulerId)
+	assert.Nil(t, err)
+
+	// try to create runtime
+	err = s.SetStrategyRuntime(runtimeOri1)
+	assert.Nil(t, err)
+
+	// fetch it back
+	runtime, err = s.GetStrategyRuntime(runtimeOri1.StrategyId, runtimeOri1.SchedulerId)
+	assert.Nil(t, err)
+	assert.NotNil(t, runtime)
+	assert.Equal(t, runtimeOri1.StrategyId, runtime.StrategyId)
+	assert.Equal(t, runtimeOri1.SchedulerId, runtime.SchedulerId)
+
+	// try to recreate runtime
+	err = s.SetStrategyRuntime(runtimeOri1)
+	assert.Nil(t, err)
+
+	// register the rest
+	s.SetStrategyRuntime(runtimeOri2)
+	s.SetStrategyRuntime(runtimeOri3)
+	s.SetStrategyRuntime(runtimeOri4)
+	s.SetStrategyRuntime(runtimeOri5)
+
+	// verify list
+	arr, err := s.GetStrategyRuntimes(runtimeOri1.StrategyId)
+	assert.Nil(t, err)
+	assert.NotNil(t, arr)
+	assert.Equal(t, 3, len(arr))
+
+	arr, err = s.GetStrategyRuntimes(runtimeOri4.StrategyId)
+	assert.Nil(t, err)
+	assert.NotNil(t, arr)
+	assert.Equal(t, 2, len(arr))
+
+	// delete
+	err = s.RemoveStrategyRuntime(runtimeOri1.StrategyId, runtimeOri1.SchedulerId)
+	assert.Nil(t, err)
+
+	// re-delete
+	err = s.RemoveStrategyRuntime(runtimeOri1.StrategyId, runtimeOri1.SchedulerId)
+	assert.Nil(t, err)
+
+	// verify delete
+	arr, err = s.GetStrategyRuntimes(runtimeOri1.StrategyId)
+	assert.Nil(t, err)
+	assert.NotNil(t, arr)
+	assert.Equal(t, 2, len(arr))
+
+	runtime, err = s.GetStrategyRuntime(runtimeOri1.StrategyId, runtimeOri1.SchedulerId)
+	assert.NotNil(t, err)
+	assert.Equal(t, store.NotExist, err)
+	assert.Nil(t, runtime)
+}
+
 func DoTestScheduler(t *testing.T, s store.Store) {
 	schedulerOri := &definition.Scheduler{
 		Id: "demo-scheduler",
 	}
+	list, _ := s.GetSchedulers()
+	for _, scheduler := range list {
+		s.UnregisterScheduler(scheduler.Id)
+	}
 
-	list := s.GetSchedulers()
+	list, err := s.GetSchedulers()
+	assert.Nil(t, err)
 	assert.Empty(t, list)
 
 	s.RegisterScheduler(schedulerOri)
 
-	list = s.GetSchedulers()
+	list, err = s.GetSchedulers()
+	assert.Nil(t, err)
 	assert.NotEmpty(t, list)
 
 	scheduler, err := s.GetScheduler(schedulerOri.Id)
@@ -183,6 +272,7 @@ func DoTestScheduler(t *testing.T, s store.Store) {
 
 	s.UnregisterScheduler(schedulerOri.Id)
 
-	list = s.GetSchedulers()
+	list, err = s.GetSchedulers()
+	assert.Nil(t, err)
 	assert.Empty(t, list)
 }

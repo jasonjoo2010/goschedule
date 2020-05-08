@@ -5,23 +5,33 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jasonjoo2010/goschedule/core/definition"
+	"github.com/jasonjoo2010/goschedule/store"
 	"github.com/jasonjoo2010/goschedule/store/memory"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestHeartbeat(t *testing.T) {
-	store := memory.New()
-	manager1, err := New(store)
-	manager2, err := New(store)
+func newManager(t *testing.T, store store.Store) *ScheduleManager {
+	manager, err := New(store)
 	assert.Nil(t, err)
-	assert.NotNil(t, manager1)
-	assert.NotNil(t, manager2)
+	assert.NotNil(t, manager)
 
 	// change heartbeat rate manually
-	manager1.heartbeatRate = 100 * time.Millisecond
-	manager1.deathTimeout = 1000 * time.Millisecond
-	manager2.heartbeatRate = 100 * time.Millisecond
-	manager2.deathTimeout = 1000 * time.Millisecond
+	manager.heartbeatInterval = 100 * time.Millisecond
+	manager.deathTimeout = 1000 * time.Millisecond
+
+	return manager
+}
+
+func TestHeartbeat(t *testing.T) {
+	store := memory.New()
+	manager1 := newManager(t, store)
+	manager2 := newManager(t, store)
+
+	store.CreateStrategy(&definition.Strategy{
+		Id:     "test",
+		IpList: []string{"127.0.0.1"},
+	})
 
 	manager1.Start()
 	manager2.Start()
@@ -29,13 +39,22 @@ func TestHeartbeat(t *testing.T) {
 	time.Sleep(time.Second)
 
 	now := time.Now().UnixNano() / int64(time.Millisecond)
-	for _, s := range store.GetSchedulers() {
+	schedulers, err := store.GetSchedulers()
+	assert.Nil(t, err)
+	for _, s := range schedulers {
 		assert.True(t, math.Abs(float64(now-s.LastHeartbeat)) < 200)
 		assert.True(t, s.Enabled)
 	}
 
+	// runtimes
+	runtimeList, err := store.GetStrategyRuntimes("test")
+	assert.Nil(t, err)
+	assert.Equal(t, 2, len(runtimeList))
+
 	// disable scheduler
-	for _, s := range store.GetSchedulers() {
+	schedulers, err = store.GetSchedulers()
+	assert.Nil(t, err)
+	for _, s := range schedulers {
 		s.Enabled = false
 		store.RegisterScheduler(s)
 	}
@@ -43,11 +62,21 @@ func TestHeartbeat(t *testing.T) {
 	time.Sleep(time.Second)
 
 	now = time.Now().UnixNano() / int64(time.Millisecond)
-	for _, s := range store.GetSchedulers() {
+	schedulers, err = store.GetSchedulers()
+	assert.Nil(t, err)
+	for _, s := range schedulers {
 		assert.True(t, math.Abs(float64(now-s.LastHeartbeat)) < 200)
 		assert.False(t, s.Enabled)
 	}
 
+	// runtimes
+	runtimeList, err = store.GetStrategyRuntimes("test")
+	assert.Nil(t, err)
+	assert.Equal(t, 0, len(runtimeList))
+
 	manager1.Shutdown()
 	manager2.Shutdown()
+
+	schedulers, err = store.GetSchedulers()
+	assert.Empty(t, schedulers)
 }

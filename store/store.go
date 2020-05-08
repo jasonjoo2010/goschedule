@@ -3,6 +3,7 @@ package store
 import (
 	"errors"
 
+	"github.com/jasonjoo2010/enhanced-utils/concurrent/distlock"
 	"github.com/jasonjoo2010/goschedule/core/definition"
 )
 
@@ -11,6 +12,9 @@ import (
 // Strategy - persistent
 // StrategyRuntime - temporary
 // Scheduler - temporary (And it has death detection)
+
+// The consistence and correctness should be guaranteed in upper layer which
+// can make the store layer much easiler
 
 var (
 	NotExist     = errors.New("Specified item is not existed")
@@ -33,9 +37,11 @@ type Store interface {
 	// Close the storage and it will never be use again
 	Close() error
 
-	RegisterScheduler(scheduler *definition.Scheduler)
-	UnregisterScheduler(id string)
-	GetSchedulers() []*definition.Scheduler
+	Lock() *distlock.DistLock
+
+	RegisterScheduler(scheduler *definition.Scheduler) error
+	UnregisterScheduler(id string) error
+	GetSchedulers() ([]*definition.Scheduler, error)
 	GetScheduler(id string) (*definition.Scheduler, error)
 
 	// GetTask returns the specified task if it exists or nil with an error of NotExist

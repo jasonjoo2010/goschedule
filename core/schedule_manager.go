@@ -1,6 +1,7 @@
 package core
 
 import (
+	"log"
 	"sync"
 	"time"
 
@@ -17,9 +18,11 @@ type ScheduleManager struct {
 	started          bool
 	needStop         bool
 	// Interval of heartbeat
-	heartbeatRate time.Duration
+	heartbeatInterval time.Duration
 	// Timeout to be death
 	deathTimeout time.Duration
+	// Schedule interval
+	scheduleInterval time.Duration
 }
 
 func New(store store.Store) (*ScheduleManager, error) {
@@ -34,11 +37,12 @@ func New(store store.Store) (*ScheduleManager, error) {
 		Enabled: true,
 	}
 	m := &ScheduleManager{
-		store:            store,
-		shutdownNotifier: make(chan int),
-		scheduler:        s,
-		heartbeatRate:    5000 * time.Millisecond,
-		deathTimeout:     60000 * time.Millisecond,
+		store:             store,
+		shutdownNotifier:  make(chan int),
+		scheduler:         s,
+		heartbeatInterval: 5000 * time.Millisecond,
+		deathTimeout:      60000 * time.Millisecond,
+		scheduleInterval:  10000 * time.Millisecond,
 	}
 	return m, nil
 }
@@ -55,12 +59,33 @@ func (s *ScheduleManager) Start() {
 }
 
 func (s *ScheduleManager) Shutdown() {
+	s.Lock()
+	defer s.Unlock()
+	if !s.started {
+		return
+	}
 	s.needStop = true
-	<-s.shutdownNotifier // heartbeat
-	<-s.shutdownNotifier // schedule loop
 	defer func() {
 		s.started = false
 	}()
+
+	// wait for heartbeat
+	timeout := time.NewTimer(10 * time.Second)
+	select {
+	case <-s.shutdownNotifier: // heartbeat
+	case <-timeout.C:
+		log.Println("Failed to stop heartbeat")
+	}
+
+	// wait for schedule loop
+	timeout.Reset(10 * time.Second)
+	select {
+	case <-s.shutdownNotifier: // schedule loop
+	case <-timeout.C:
+		log.Println("Failed to stop schedule loop")
+	}
+	timeout.Stop()
+
 	s.store.UnregisterScheduler(s.scheduler.Id)
 	s.store.Close()
 }
