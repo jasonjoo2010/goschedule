@@ -1,10 +1,12 @@
 package core
 
 import (
+	"fmt"
 	"log"
 	"time"
 
 	"github.com/jasonjoo2010/goschedule/core/definition"
+	"github.com/jasonjoo2010/goschedule/core/worker"
 	"github.com/jasonjoo2010/goschedule/store"
 	"github.com/jasonjoo2010/goschedule/utils"
 )
@@ -113,6 +115,11 @@ func (s *ScheduleManager) assign() {
 	}
 }
 
+func (s *ScheduleManager) createWorker(strategy *definition.Strategy) worker.Worker {
+	// TODO
+	return worker.NewSimpe(*strategy)
+}
+
 func (s *ScheduleManager) adjustWorkers() {
 	strategies, err := s.store.GetStrategies()
 	if err != nil {
@@ -126,15 +133,39 @@ func (s *ScheduleManager) adjustWorkers() {
 			log.Println("Failed to fetch runtime for", strategy.Id, err)
 			continue
 		}
-		if runtime.Num != runtime.RequestedNum {
-			// XXX update
-			delta := runtime.RequestedNum - runtime.Num
+		if runtime.RequestedNum < 0 {
+			log.Fatal("Requested count of workers in runtime is set to a wrong number:", runtime.RequestedNum, "for", strategy.Id)
+			runtime.RequestedNum = 0
+		}
+		workers, ok := s.workersMap[runtime.StrategyId]
+		if !ok {
+			workers = make([]worker.Worker, 0, utils.Max(1, runtime.RequestedNum))
+			s.workersMap[runtime.StrategyId] = workers
+		}
+		if len(workers) != runtime.RequestedNum {
+			delta := runtime.RequestedNum - len(workers)
 			if delta > 0 {
+				// increase
 				log.Println("Increase worker by", delta, "for", strategy.Id, "on", s.scheduler.Id)
+				for i := 0; i < delta; i++ {
+					workers = append(workers, s.createWorker(strategy))
+				}
 			} else {
+				// decrease
 				log.Println("Decrease worker by", -delta, "for", strategy.Id, "on", s.scheduler.Id)
+				discards := workers[len(workers)-utils.Abs(delta):]
+				workers = workers[:len(workers)-utils.Abs(delta)]
+				// stop them
+				for _, w := range discards {
+					w.Stop()
+				}
 			}
-			runtime.Num = runtime.RequestedNum // XXX Should be actually count of workers
+			s.workersMap[runtime.StrategyId] = workers
+		}
+		// update info in storage
+		if runtime.Num != len(workers) {
+			runtime.Num = len(workers)
+			fmt.Println(workers)
 			s.store.SetStrategyRuntime(runtime)
 		}
 	}
@@ -152,6 +183,15 @@ func (s *ScheduleManager) schedule() {
 	s.adjustWorkers()
 }
 
+func (s *ScheduleManager) stopAll() {
+	for k, workers := range s.workersMap {
+		for _, w := range workers {
+			w.Stop()
+		}
+		delete(s.workersMap, k)
+	}
+}
+
 func (s *ScheduleManager) scheduleLoop() {
 	// stop handler
 	defer func() { s.shutdownNotifier <- 2 }()
@@ -159,4 +199,5 @@ func (s *ScheduleManager) scheduleLoop() {
 		s.schedule()
 		s.delay(s.scheduleInterval)
 	}
+	s.stopAll()
 }

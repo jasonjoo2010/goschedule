@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/jasonjoo2010/goschedule/core/definition"
+	"github.com/jasonjoo2010/goschedule/core/worker"
 	"github.com/jasonjoo2010/goschedule/store"
 	"github.com/jasonjoo2010/goschedule/utils"
 )
@@ -14,6 +15,7 @@ type ScheduleManager struct {
 	sync.Mutex
 	store            store.Store
 	scheduler        *definition.Scheduler
+	workersMap       map[string][]worker.Worker
 	shutdownNotifier chan int
 	started          bool
 	needStop         bool
@@ -40,6 +42,7 @@ func New(store store.Store) (*ScheduleManager, error) {
 		store:             store,
 		shutdownNotifier:  make(chan int),
 		scheduler:         s,
+		workersMap:        make(map[string][]worker.Worker),
 		heartbeatInterval: 5000 * time.Millisecond,
 		deathTimeout:      60000 * time.Millisecond,
 		scheduleInterval:  10000 * time.Millisecond,

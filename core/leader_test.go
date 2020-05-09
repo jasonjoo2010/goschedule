@@ -113,10 +113,11 @@ func TestAssign(t *testing.T) {
 	TASK_COUNT := 2
 
 	store.CreateStrategy(&definition.Strategy{
-		Id:      "S",
-		IpList:  []string{"127.0.0.1"},
-		Total:   TASK_COUNT,
-		Enabled: true,
+		Id:                   "S",
+		IpList:               []string{"127.0.0.1"},
+		Total:                TASK_COUNT,
+		MaxOnSingleScheduler: 1,
+		Enabled:              true,
 	})
 
 	manager1.Start()
