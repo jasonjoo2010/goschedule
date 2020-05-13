@@ -388,7 +388,10 @@ func (s *RedisStore) GetScheduler(id string) (*definition.Scheduler, error) {
 func (s *RedisStore) GetSchedulers() ([]*definition.Scheduler, error) {
 	cur := uint64(0)
 	key := s.keySchedulers()
-	size := s.client.HLen(key).Val()
+	size, err := s.client.HLen(key).Result()
+	if err != nil {
+		return make([]*definition.Scheduler, 0), err
+	}
 	page := int64(20)
 	if size < 1 {
 		return []*definition.Scheduler{}, nil
