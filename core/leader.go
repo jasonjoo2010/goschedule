@@ -1,6 +1,7 @@
 package core
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"time"
@@ -78,7 +79,8 @@ func (s *ScheduleManager) generateRuntimes() {
 			// clear runtimes if any
 			if runtime != nil {
 				s.store.RemoveStrategyRuntime(strategy.Id, s.scheduler.Id)
-				// TODO stop the worker manager if needed
+				// stop the workers
+				s.stopWorkers(strategy.Id)
 			}
 		}
 	}
@@ -115,9 +117,16 @@ func (s *ScheduleManager) assign() {
 	}
 }
 
-func (s *ScheduleManager) createWorker(strategy *definition.Strategy) worker.Worker {
-	// TODO
-	return worker.NewSimpe(*strategy)
+func (s *ScheduleManager) createWorker(strategy *definition.Strategy) (worker.Worker, error) {
+	switch strategy.Kind {
+	case definition.SimpleKind:
+		return worker.NewSimple(*strategy)
+	case definition.FuncKind:
+		return worker.NewFunc(*strategy)
+	default:
+		log.Fatal("Unknow Kind of strategy:", strategy.Kind)
+		return nil, errors.New("Unknow strategy kind")
+	}
 }
 
 func (s *ScheduleManager) adjustWorkers() {
@@ -148,7 +157,12 @@ func (s *ScheduleManager) adjustWorkers() {
 				// increase
 				log.Println("Increase worker by", delta, "for", strategy.Id, "on", s.scheduler.Id)
 				for i := 0; i < delta; i++ {
-					workers = append(workers, s.createWorker(strategy))
+					w, err := s.createWorker(strategy)
+					if err != nil {
+						log.Fatal("Can't create worker for:", strategy.Id)
+						continue
+					}
+					workers = append(workers, w)
 				}
 			} else {
 				// decrease
@@ -174,21 +188,27 @@ func (s *ScheduleManager) adjustWorkers() {
 func (s *ScheduleManager) schedule() {
 	s.clearExpiredSchedulers()
 	s.generateRuntimes()
-	if s.scheduler.Enabled == false {
-		// TODO stop all servers locally
-	}
 	// calculate schedule table
 	s.assign()
 	// adjust local workers
 	s.adjustWorkers()
 }
 
-func (s *ScheduleManager) stopAll() {
-	for k, workers := range s.workersMap {
-		for _, w := range workers {
-			w.Stop()
-		}
-		delete(s.workersMap, k)
+// stopWorkers stop group of workers binded to specific strategy
+func (s *ScheduleManager) stopWorkers(strategyId string) {
+	workers, ok := s.workersMap[strategyId]
+	if false == ok {
+		return
+	}
+	for _, w := range workers {
+		w.Stop()
+	}
+	delete(s.workersMap, strategyId)
+}
+
+func (s *ScheduleManager) stopAllWorkers() {
+	for k := range s.workersMap {
+		s.stopWorkers(k)
 	}
 }
 
@@ -199,5 +219,5 @@ func (s *ScheduleManager) scheduleLoop() {
 		s.schedule()
 		s.delay(s.scheduleInterval)
 	}
-	s.stopAll()
+	s.stopAllWorkers()
 }

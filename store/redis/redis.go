@@ -57,11 +57,12 @@ func NewFromConfig(config *RedisStoreConfig) *RedisStore {
 	}
 }
 
-func New(host string, port int) *RedisStore {
+func New(prefix, host string, port int) *RedisStore {
 	return NewFromConfig(&RedisStoreConfig{
 		Addrs: []string{
 			host + ":" + strconv.Itoa(port),
 		},
+		Prefix: prefix,
 	})
 }
 

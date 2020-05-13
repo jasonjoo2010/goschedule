@@ -8,7 +8,8 @@ type StrategyKind int
 
 const (
 	_ StrategyKind = iota
-	GeneralKind
+	SimpleKind
+	FuncKind
 	TaskKind
 )
 

@@ -116,6 +116,7 @@ func TestAssign(t *testing.T) {
 		Id:                   "S",
 		IpList:               []string{"127.0.0.1"},
 		Total:                TASK_COUNT,
+		Kind:                 definition.SimpleKind,
 		MaxOnSingleScheduler: 1,
 		Enabled:              true,
 	})
