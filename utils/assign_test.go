@@ -81,3 +81,24 @@ func TestSortRuntimesWithShuffle(t *testing.T) {
 		assert.GreaterOrEqual(t, runtimes[i-1].RequestedNum, runtimes[i].RequestedNum)
 	}
 }
+
+func TestSortSchedulers(t *testing.T) {
+	schedulers := make([]*definition.Scheduler, 4)
+	schedulers[0] = &definition.Scheduler{
+		Id: "a$b$3$00000012",
+	}
+	schedulers[1] = &definition.Scheduler{
+		Id: "c$b$3$00000011",
+	}
+	schedulers[2] = &definition.Scheduler{
+		Id: "b$b$3$00000013",
+	}
+	schedulers[3] = &definition.Scheduler{
+		Id: "a$b$3$000009",
+	}
+
+	SortSchedulers(schedulers)
+
+	assert.Equal(t, "a$b$3$000009", schedulers[0].Id)
+	assert.Equal(t, "b$b$3$00000013", schedulers[3].Id)
+}

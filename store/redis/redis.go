@@ -13,6 +13,7 @@ import (
 	lockstore "github.com/jasonjoo2010/enhanced-utils/concurrent/distlock/redis"
 	"github.com/jasonjoo2010/goschedule/core/definition"
 	"github.com/jasonjoo2010/goschedule/store"
+	"github.com/jasonjoo2010/goschedule/utils"
 )
 
 /**
@@ -370,7 +371,6 @@ func (s *RedisStore) RegisterScheduler(scheduler *definition.Scheduler) error {
 		return errors.New("Serialize scheduler object failed")
 	}
 	s.client.HSet(key, scheduler.Id, string(data)).Result()
-	// XXX: Runtime operations registering migrated to upper logic
 	return nil
 }
 func (s *RedisStore) UnregisterScheduler(id string) error {
@@ -422,5 +422,6 @@ func (s *RedisStore) GetSchedulers() ([]*definition.Scheduler, error) {
 		}
 		cur = c
 	}
+	utils.SortSchedulers(list)
 	return list, nil
 }

@@ -3,6 +3,8 @@ package utils
 import (
 	"math/rand"
 	"sort"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/jasonjoo2010/goschedule/core/definition"
@@ -26,7 +28,7 @@ func shuffleRange(runtimes []*definition.StrategyRuntime, from, to int) {
 // SortRuntimes sort the runtimes based on requestedNum in descending order
 //	A shuffle will be made between same num for better ditribution of workers
 func SortRuntimesWithShuffle(runtimes []*definition.StrategyRuntime) {
-	if len(runtimes) < 1 {
+	if len(runtimes) <= 1 {
 		return
 	}
 	sort.Slice(runtimes, func(i, j int) bool {
@@ -42,6 +44,26 @@ func SortRuntimesWithShuffle(runtimes []*definition.StrategyRuntime) {
 		}
 	}
 	shuffleRange(runtimes, pos, len(runtimes))
+}
+
+func compareWithSequence(s1, s2 string) bool {
+	pos1 := strings.LastIndexByte(s1, '$')
+	pos2 := strings.LastIndexByte(s1, '$')
+	if pos1 < 1 || pos2 < 1 {
+		return pos1 < pos2
+	}
+	seq1, _ := strconv.Atoi(s1[pos1+1:])
+	seq2, _ := strconv.Atoi(s2[pos2+1:])
+	return seq1 < seq2
+}
+
+func SortSchedulers(schedulers []*definition.Scheduler) {
+	if len(schedulers) <= 1 {
+		return
+	}
+	sort.Slice(schedulers, func(i, j int) bool {
+		return compareWithSequence(schedulers[i].Id, schedulers[j].Id)
+	})
 }
 
 // AssignWorkers assigns workers between nodes and limit maximum per node.

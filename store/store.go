@@ -41,6 +41,7 @@ type Store interface {
 
 	RegisterScheduler(scheduler *definition.Scheduler) error
 	UnregisterScheduler(id string) error
+	// GetSchedulers returns all the schedulers and sorted by scheduler's id base on sequence number in ascent
 	GetSchedulers() ([]*definition.Scheduler, error)
 	GetScheduler(id string) (*definition.Scheduler, error)
 

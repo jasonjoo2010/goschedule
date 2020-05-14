@@ -9,6 +9,7 @@ import (
 	lockstore "github.com/jasonjoo2010/enhanced-utils/concurrent/distlock/mock"
 	"github.com/jasonjoo2010/goschedule/core/definition"
 	"github.com/jasonjoo2010/goschedule/store"
+	"github.com/jasonjoo2010/goschedule/utils"
 )
 
 type MemoryStore struct {
@@ -256,5 +257,6 @@ func (s *MemoryStore) GetSchedulers() ([]*definition.Scheduler, error) {
 		copyScheduler := *t
 		list = append(list, &copyScheduler)
 	}
+	utils.SortSchedulers(list)
 	return list, nil
 }
