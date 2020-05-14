@@ -20,8 +20,7 @@ type Strategy struct {
 	Total                int      // Total workers should be created
 	Kind                 StrategyKind
 	Bind                 string // resource name or type name to bind, cooperate with Kind
-	Parameter            string // Will be ignored if kind == Task
-	TaskId               string
+	Parameter            string
 	Enabled              bool // Whether it should begin to schedule
 }
 
