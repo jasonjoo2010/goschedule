@@ -18,11 +18,20 @@ var (
 )
 
 func GetType(name string) reflect.Type {
-	if t, ok := nameToTypeMap.Load(name); ok {
-		return t.(reflect.Type)
+	if v, ok := nameToTypeMap.Load(name); ok {
+		t, ok := v.(reflect.Type)
+		if ok {
+			return t
+		}
+		logrus.Warn("Type registered for key: ", name, " is not a reflect.Type")
+		return nil
 	}
 	logrus.Warn("No type registered for key: ", name)
 	return nil
+}
+
+func GetFunc(name string) {
+	// TODO
 }
 
 // Register register specific type with its full package path as key

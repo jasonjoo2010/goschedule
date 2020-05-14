@@ -7,7 +7,7 @@ import (
 type StrategyKind int
 
 const (
-	_ StrategyKind = iota
+	UnknowKind StrategyKind = iota
 	SimpleKind
 	FuncKind
 	TaskKind
