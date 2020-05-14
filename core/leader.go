@@ -65,7 +65,7 @@ func (s *ScheduleManager) generateRuntimes() {
 		if err != nil && err != store.NotExist {
 			continue
 		}
-		if s.scheduler.Enabled && canSchedule {
+		if s.scheduler.Enabled && strategy.Enabled && canSchedule {
 			// register runtimes if lack
 			if runtime == nil {
 				runtime = &definition.StrategyRuntime{
@@ -93,8 +93,8 @@ func (s *ScheduleManager) assign() {
 	}
 
 	for _, strategy := range strategies {
-		if false == strategy.Enabled {
-			// XXX strategy is disabled
+		if !strategy.Enabled {
+			continue
 		}
 		if !s.isLeader(strategy.Id) {
 			continue
@@ -136,6 +136,9 @@ func (s *ScheduleManager) adjustWorkers() {
 	}
 
 	for _, strategy := range strategies {
+		if !strategy.Enabled {
+			continue
+		}
 		runtime, err := s.store.GetStrategyRuntime(strategy.Id, s.scheduler.Id)
 		if err != nil {
 			log.Println("Failed to fetch runtime for", strategy.Id, err)
