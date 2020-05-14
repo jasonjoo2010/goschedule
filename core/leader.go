@@ -2,7 +2,6 @@ package core
 
 import (
 	"errors"
-	"fmt"
 	"log"
 	"time"
 
@@ -179,7 +178,6 @@ func (s *ScheduleManager) adjustWorkers() {
 		// update info in storage
 		if runtime.Num != len(workers) {
 			runtime.Num = len(workers)
-			fmt.Println(workers)
 			s.store.SetStrategyRuntime(runtime)
 		}
 	}
