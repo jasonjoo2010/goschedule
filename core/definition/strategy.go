@@ -19,6 +19,7 @@ type Strategy struct {
 	MaxOnSingleScheduler int      // Max workers can be created on the same scheduler
 	Total                int      // Total workers should be created
 	Kind                 StrategyKind
+	Bind                 string // resource name or type name to bind, cooperate with Kind
 	Parameter            string // Will be ignored if kind == Task
 	TaskId               string
 	Enabled              bool // Whether it should begin to schedule
