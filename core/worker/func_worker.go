@@ -96,6 +96,7 @@ func (w *FuncWorker) Start(strategyId, parameter string) {
 }
 
 func (w *FuncWorker) Stop(strategyId string) {
+	w.needStop = true
 	timeout := time.NewTimer(w.TimeoutShutdown)
 	select {
 	case <-w.notifier:
