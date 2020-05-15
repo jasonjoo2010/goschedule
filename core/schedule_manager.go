@@ -1,7 +1,6 @@
 package core
 
 import (
-	"log"
 	"sync"
 	"time"
 
@@ -9,6 +8,7 @@ import (
 	"github.com/jasonjoo2010/goschedule/core/worker"
 	"github.com/jasonjoo2010/goschedule/store"
 	"github.com/jasonjoo2010/goschedule/utils"
+	"github.com/sirupsen/logrus"
 )
 
 type ScheduleManager struct {
@@ -84,7 +84,7 @@ func (s *ScheduleManager) Shutdown() {
 	select {
 	case <-s.shutdownNotifier: // heartbeat
 	case <-timeout.C:
-		log.Println("Failed to stop heartbeat")
+		logrus.Warn("Failed to stop heartbeat")
 	}
 
 	// wait for schedule loop
@@ -92,7 +92,7 @@ func (s *ScheduleManager) Shutdown() {
 	select {
 	case <-s.shutdownNotifier: // schedule loop
 	case <-timeout.C:
-		log.Println("Failed to stop schedule loop")
+		logrus.Warn("Failed to stop schedule loop")
 	}
 	timeout.Stop()
 

@@ -2,7 +2,6 @@ package worker
 
 import (
 	"errors"
-	"log"
 	"strconv"
 	"sync"
 	"time"
@@ -104,7 +103,7 @@ func (w *FuncWorker) Stop(strategyId string) {
 		timeout.Stop()
 	case <-timeout.C:
 		// timeout
-		log.Fatalln("Failed to stop a FuncWorker")
+		logrus.Error("Failed to stop a FuncWorker")
 	}
-	log.Println("Worker of strategy ", strategyId, " stopped")
+	logrus.Error("Worker of strategy ", strategyId, " stopped")
 }

@@ -2,7 +2,6 @@ package core
 
 import (
 	"errors"
-	"log"
 	"time"
 
 	"github.com/jasonjoo2010/goschedule/core/definition"
@@ -29,7 +28,7 @@ func (s *ScheduleManager) cleanDeadScheduler(schedulerId string) {
 	// clean dead runtimes binded to it
 	strategies, err := s.store.GetStrategies()
 	if err != nil {
-		log.Println("Failed to fetch strategies", err)
+		logrus.Warn("Failed to fetch strategies: ", err.Error())
 		return
 	}
 	for _, strategy := range strategies {
@@ -40,13 +39,13 @@ func (s *ScheduleManager) cleanDeadScheduler(schedulerId string) {
 func (s *ScheduleManager) clearExpiredSchedulers() {
 	schedulers, err := s.store.GetSchedulers()
 	if err != nil {
-		log.Println("Get scheudlers failed:", err)
+		logrus.Warn("Get scheudlers failed: ", err.Error())
 		return
 	}
 	now := time.Now().UnixNano() / 1e6
 	for _, scheduler := range schedulers {
 		if now-scheduler.LastHeartbeat > s.DeathTimeout.Milliseconds() {
-			log.Println("Clear expired scheduler:", scheduler.Id, ", last reach at", scheduler.LastHeartbeat)
+			logrus.Info("Clear expired scheduler: ", scheduler.Id, ", last reach at ", scheduler.LastHeartbeat)
 			s.cleanDeadScheduler(scheduler.Id)
 		}
 	}
@@ -55,7 +54,7 @@ func (s *ScheduleManager) clearExpiredSchedulers() {
 func (s *ScheduleManager) generateRuntimes() {
 	strategies, err := s.store.GetStrategies()
 	if err != nil {
-		log.Println("Get strategies failed:", err)
+		logrus.Warn("Get strategies failed: ", err.Error())
 		return
 	}
 	hostname := utils.GetHostName()
@@ -78,6 +77,7 @@ func (s *ScheduleManager) generateRuntimes() {
 		} else {
 			// clear runtimes if any
 			if runtime != nil {
+				logrus.Info("Clean runtime for strategy: ", runtime.StrategyId)
 				s.store.RemoveStrategyRuntime(strategy.Id, s.scheduler.Id)
 				// stop the workers
 				s.stopWorkers(strategy.Id)
@@ -89,7 +89,7 @@ func (s *ScheduleManager) generateRuntimes() {
 func (s *ScheduleManager) assign() {
 	strategies, err := s.store.GetStrategies()
 	if err != nil {
-		log.Println("Failed to fetch strategies", err)
+		logrus.Warn("Failed to fetch strategies", err)
 		return
 	}
 
@@ -103,7 +103,7 @@ func (s *ScheduleManager) assign() {
 		// It's the leader to specific strategy
 		runtimes, err := s.store.GetStrategyRuntimes(strategy.Id)
 		if err != nil {
-			log.Println("Failed to fetch runtimes for", strategy.Id, err)
+			logrus.Warn("Failed to fetch runtimes for ", strategy.Id, ": ", err.Error())
 			continue
 		}
 		workerRequiredArr := utils.AssignWorkers(len(runtimes), strategy.Total, strategy.MaxOnSingleScheduler)
@@ -124,7 +124,7 @@ func (s *ScheduleManager) createWorker(strategy *definition.Strategy) (worker.Wo
 	case definition.FuncKind:
 		return worker.NewFunc(*strategy)
 	default:
-		log.Fatal("Unknow Kind of strategy:", strategy.Kind)
+		logrus.Error("Unknow Kind of strategy: ", strategy.Kind)
 		return nil, errors.New("Unknow strategy kind")
 	}
 }
@@ -132,7 +132,7 @@ func (s *ScheduleManager) createWorker(strategy *definition.Strategy) (worker.Wo
 func (s *ScheduleManager) adjustWorkers() {
 	strategies, err := s.store.GetStrategies()
 	if err != nil {
-		log.Println("Failed to fetch strategies", err)
+		logrus.Warn("Failed to fetch strategies ", err)
 		return
 	}
 
@@ -142,11 +142,11 @@ func (s *ScheduleManager) adjustWorkers() {
 		}
 		runtime, err := s.store.GetStrategyRuntime(strategy.Id, s.scheduler.Id)
 		if err != nil {
-			log.Println("Failed to fetch runtime for", strategy.Id, err)
+			logrus.Warn("Failed to fetch runtime for ", strategy.Id, ": ", err.Error())
 			continue
 		}
 		if runtime.RequestedNum < 0 {
-			log.Fatal("Requested count of workers in runtime is set to a wrong number:", runtime.RequestedNum, "for", strategy.Id)
+			logrus.Error("Requested count of workers in runtime is set to a wrong number: ", runtime.RequestedNum, " for ", strategy.Id)
 			runtime.RequestedNum = 0
 		}
 		workers, ok := s.workersMap[runtime.StrategyId]
@@ -158,11 +158,11 @@ func (s *ScheduleManager) adjustWorkers() {
 			delta := runtime.RequestedNum - len(workers)
 			if delta > 0 {
 				// increase
-				log.Println("Increase worker by", delta, "for", strategy.Id, "on", s.scheduler.Id)
+				logrus.Info("Increase worker by ", delta, " for ", strategy.Id, " on ", s.scheduler.Id)
 				for i := 0; i < delta; i++ {
 					w, err := s.createWorker(strategy)
 					if err != nil {
-						log.Fatal("Can't create worker for:", strategy.Id)
+						logrus.Error("Can't create worker for: ", strategy.Id)
 						continue
 					}
 					w.Start(strategy.Id, strategy.Parameter)
@@ -171,7 +171,7 @@ func (s *ScheduleManager) adjustWorkers() {
 				}
 			} else {
 				// decrease
-				log.Println("Decrease worker by", -delta, "for", strategy.Id, "on", s.scheduler.Id)
+				logrus.Info("Decrease worker by ", -delta, " for ", strategy.Id, " on ", s.scheduler.Id)
 				discards := workers[len(workers)-utils.Abs(delta):]
 				workers = workers[:len(workers)-utils.Abs(delta)]
 				// stop them
