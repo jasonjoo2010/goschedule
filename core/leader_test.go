@@ -63,7 +63,7 @@ func TestExpiredSchedulers(t *testing.T) {
 	fmt.Println(runtimes)
 
 	// Wait to cleared
-	time.Sleep(manager.deathTimeout)
+	time.Sleep(manager.DeathTimeout)
 
 	list, _ = store.GetSchedulers()
 	assert.Equal(t, 1, len(list))
@@ -106,9 +106,9 @@ func TestAssign(t *testing.T) {
 	manager1 := newManager(t, store)
 	manager2 := newManager(t, store)
 	manager3 := newManager(t, store)
-	manager1.scheduleInterval = 500 * time.Millisecond
-	manager2.scheduleInterval = 500 * time.Millisecond
-	manager3.scheduleInterval = 500 * time.Millisecond
+	manager1.ScheduleInterval = 500 * time.Millisecond
+	manager2.ScheduleInterval = 500 * time.Millisecond
+	manager3.ScheduleInterval = 500 * time.Millisecond
 
 	TASK_COUNT := 2
 

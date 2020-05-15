@@ -1,6 +1,7 @@
 package worker
 
 import (
+	"fmt"
 	"reflect"
 	"sync"
 
@@ -10,15 +11,16 @@ import (
 
 // Worker manages data of scheduling for binded strategy
 type Worker interface {
-	Stop()
+	Start(strategyId, parameter string)
+	Stop(strategyId string)
 }
 
 var (
-	nameToTypeMap sync.Map
+	registryMap sync.Map
 )
 
 func GetType(name string) reflect.Type {
-	if v, ok := nameToTypeMap.Load(name); ok {
+	if v, ok := registryMap.Load(name); ok {
 		t, ok := v.(reflect.Type)
 		if ok {
 			return t
@@ -30,18 +32,33 @@ func GetType(name string) reflect.Type {
 	return nil
 }
 
-func GetFunc(name string) {
-	// TODO
+func GetFunc(name string) FuncInterface {
+	if v, ok := registryMap.Load(name); ok {
+		fmt.Println()
+		if fn, ok := v.(FuncInterface); ok {
+			return fn
+		}
+		logrus.Warn("Func registered for key: ", name, " is in incorrect type")
+		return nil
+	}
+	logrus.Warn("No func registered for key: ", name)
+	return nil
 }
 
-// Register register specific type with its full package path as key
+// Register registers specific type with its full package path as key
 func Register(worker interface{}) {
 	RegisterName(utils.TypeName(worker), worker)
 }
 
-// RegisterName register specific type with specific name as key
+// RegisterName registers specific type with specific name as key
 func RegisterName(name string, worker interface{}) {
 	t := reflect.TypeOf(worker)
-	nameToTypeMap.Store(name, t)
+	registryMap.Store(name, t)
 	logrus.Info("Register new worker type: ", name)
+}
+
+// RegisterFunc registers func worker into registry which could be fetch through GetFunc(name string)
+func RegisterFunc(name string, fn FuncInterface) {
+	registryMap.Store(name, fn)
+	logrus.Info("Register new worker func: ", name)
 }

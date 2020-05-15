@@ -1,44 +1,47 @@
-package core
+package utils
 
 import (
 	"testing"
 	"time"
 
-	"github.com/jasonjoo2010/goschedule/store/memory"
 	"github.com/stretchr/testify/assert"
 )
 
+type DelayDemo struct {
+	needStop bool
+}
+
+func (demo *DelayDemo) NeedStop() bool {
+	return demo.needStop
+}
+
 func TestDelay(t *testing.T) {
-	store := memory.New()
-	manager, _ := New(store)
-	manager.Start()
+	demo := &DelayDemo{}
 
 	t0 := time.Now().UnixNano()
-	manager.delay(60 * time.Millisecond)
+	Delay(demo, 60*time.Millisecond)
 	t1 := time.Now().UnixNano()
 	diff := (t1 - t0) / 1e6
 	assert.True(t, diff > 50)
 	assert.True(t, diff < 70)
 
 	t0 = time.Now().UnixNano()
-	manager.delay(2 * time.Millisecond)
+	Delay(demo, 2*time.Millisecond)
 	t1 = time.Now().UnixNano()
 	diff = (t1 - t0) / 1e6
 	assert.True(t, diff < 10)
 
 	t0 = time.Now().UnixNano()
-	manager.delay(1010 * time.Millisecond)
+	Delay(demo, 1010*time.Millisecond)
 	t1 = time.Now().UnixNano()
 	diff = (t1 - t0) / 1e6
 	assert.True(t, diff < 1020*1.1)
 	assert.True(t, diff > 1000*0.9)
 
 	t0 = time.Now().UnixNano()
-	manager.delay(2010 * time.Millisecond)
+	Delay(demo, 2010*time.Millisecond)
 	t1 = time.Now().UnixNano()
 	diff = (t1 - t0) / 1e6
 	assert.True(t, diff < 2010*1.1)
 	assert.True(t, diff > 2010*0.9)
-
-	manager.Shutdown()
 }

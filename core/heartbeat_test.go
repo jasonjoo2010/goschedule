@@ -17,8 +17,8 @@ func newManager(t *testing.T, store store.Store) *ScheduleManager {
 	assert.NotNil(t, manager)
 
 	// change heartbeat rate manually
-	manager.heartbeatInterval = 100 * time.Millisecond
-	manager.deathTimeout = 1000 * time.Millisecond
+	manager.HeartbeatInterval = 100 * time.Millisecond
+	manager.DeathTimeout = 1000 * time.Millisecond
 
 	return manager
 }

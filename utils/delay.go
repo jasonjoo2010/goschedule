@@ -1,9 +1,13 @@
-package core
+package utils
 
 import "time"
 
+type DelaySupport interface {
+	NeedStop() bool
+}
+
 // delay guarantees an imprecision delay function
-func (s *ScheduleManager) delay(duration time.Duration) {
+func Delay(target DelaySupport, duration time.Duration) {
 	if duration < 1 {
 		return
 	}
@@ -15,7 +19,7 @@ func (s *ScheduleManager) delay(duration time.Duration) {
 		}
 		duration -= step
 		time.Sleep(step)
-		if s.needStop {
+		if target.NeedStop() {
 			break
 		}
 	}

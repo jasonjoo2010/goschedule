@@ -22,6 +22,7 @@ type Strategy struct {
 	Bind                 string // resource name or type name to bind, cooperate with Kind
 	Parameter            string
 	Enabled              bool // Whether it should begin to schedule
+	Extra                map[string]string
 }
 
 func (s *Strategy) String() string {

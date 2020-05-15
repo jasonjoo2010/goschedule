@@ -9,6 +9,7 @@ import (
 	"github.com/jasonjoo2010/goschedule/core/worker"
 	"github.com/jasonjoo2010/goschedule/store"
 	"github.com/jasonjoo2010/goschedule/utils"
+	"github.com/sirupsen/logrus"
 )
 
 func (s *ScheduleManager) isLeader(strategyId string) bool {
@@ -44,7 +45,7 @@ func (s *ScheduleManager) clearExpiredSchedulers() {
 	}
 	now := time.Now().UnixNano() / 1e6
 	for _, scheduler := range schedulers {
-		if now-scheduler.LastHeartbeat > s.deathTimeout.Milliseconds() {
+		if now-scheduler.LastHeartbeat > s.DeathTimeout.Milliseconds() {
 			log.Println("Clear expired scheduler:", scheduler.Id, ", last reach at", scheduler.LastHeartbeat)
 			s.cleanDeadScheduler(scheduler.Id)
 		}
@@ -164,6 +165,8 @@ func (s *ScheduleManager) adjustWorkers() {
 						log.Fatal("Can't create worker for:", strategy.Id)
 						continue
 					}
+					w.Start(strategy.Id, strategy.Parameter)
+					logrus.Info("Worker of strategy ", strategy.Id, " started")
 					workers = append(workers, w)
 				}
 			} else {
@@ -173,7 +176,7 @@ func (s *ScheduleManager) adjustWorkers() {
 				workers = workers[:len(workers)-utils.Abs(delta)]
 				// stop them
 				for _, w := range discards {
-					w.Stop()
+					w.Stop(runtime.StrategyId)
 				}
 			}
 			s.workersMap[runtime.StrategyId] = workers
@@ -202,7 +205,7 @@ func (s *ScheduleManager) stopWorkers(strategyId string) {
 		return
 	}
 	for _, w := range workers {
-		w.Stop()
+		w.Stop(strategyId)
 	}
 	delete(s.workersMap, strategyId)
 }
@@ -218,7 +221,7 @@ func (s *ScheduleManager) scheduleLoop() {
 	defer func() { s.shutdownNotifier <- 2 }()
 	for !s.needStop {
 		s.schedule()
-		s.delay(s.scheduleInterval)
+		utils.Delay(s, s.ScheduleInterval)
 	}
 	s.stopAllWorkers()
 }

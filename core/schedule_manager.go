@@ -17,14 +17,16 @@ type ScheduleManager struct {
 	scheduler        *definition.Scheduler
 	workersMap       map[string][]worker.Worker
 	shutdownNotifier chan int
-	started          bool
 	needStop         bool
+	Started          bool
 	// Interval of heartbeat
-	heartbeatInterval time.Duration
+	HeartbeatInterval time.Duration
 	// Timeout to be death
-	deathTimeout time.Duration
+	DeathTimeout time.Duration
 	// Schedule interval
-	scheduleInterval time.Duration
+	ScheduleInterval time.Duration
+	// Timeout when trying to shutdown
+	ShutdownTimeout time.Duration
 }
 
 func New(store store.Store) (*ScheduleManager, error) {
@@ -43,20 +45,25 @@ func New(store store.Store) (*ScheduleManager, error) {
 		shutdownNotifier:  make(chan int),
 		scheduler:         s,
 		workersMap:        make(map[string][]worker.Worker),
-		heartbeatInterval: 5000 * time.Millisecond,
-		deathTimeout:      60000 * time.Millisecond,
-		scheduleInterval:  10000 * time.Millisecond,
+		HeartbeatInterval: 5000 * time.Millisecond,
+		DeathTimeout:      60000 * time.Millisecond,
+		ScheduleInterval:  10000 * time.Millisecond,
+		ShutdownTimeout:   10000 * time.Millisecond,
 	}
 	return m, nil
+}
+
+func (s *ScheduleManager) NeedStop() bool {
+	return s.needStop
 }
 
 func (s *ScheduleManager) Start() {
 	s.Lock()
 	defer s.Unlock()
-	if s.started {
+	if s.Started {
 		return
 	}
-	s.started = true
+	s.Started = true
 	go s.heartbeat()
 	go s.scheduleLoop()
 }
@@ -64,16 +71,16 @@ func (s *ScheduleManager) Start() {
 func (s *ScheduleManager) Shutdown() {
 	s.Lock()
 	defer s.Unlock()
-	if !s.started {
+	if !s.Started {
 		return
 	}
 	s.needStop = true
 	defer func() {
-		s.started = false
+		s.Started = false
 	}()
 
 	// wait for heartbeat
-	timeout := time.NewTimer(10 * time.Second)
+	timeout := time.NewTimer(s.ShutdownTimeout)
 	select {
 	case <-s.shutdownNotifier: // heartbeat
 	case <-timeout.C:

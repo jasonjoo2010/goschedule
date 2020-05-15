@@ -1,5 +1,7 @@
 package core
 
+import "github.com/jasonjoo2010/goschedule/utils"
+
 func (s *ScheduleManager) registerInfo() {
 	scheduler, err := s.store.GetScheduler(s.scheduler.Id)
 	if err == nil {
@@ -17,7 +19,7 @@ func (s *ScheduleManager) heartbeat() {
 	defer func() { s.shutdownNotifier <- 1 }()
 	for !s.needStop {
 		s.registerInfo()
-		s.delay(s.heartbeatInterval)
+		utils.Delay(s, s.HeartbeatInterval)
 	}
 
 	// unregister runtimes from store when stop
