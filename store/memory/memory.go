@@ -1,6 +1,9 @@
 package memory
 
 import (
+	"encoding/json"
+	"strconv"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -24,6 +27,14 @@ type MemoryStore struct {
 
 type runtimeKey struct {
 	StrategyId, SchedulerId string
+}
+
+func (r *runtimeKey) String() string {
+	b := strings.Builder{}
+	b.WriteString(r.StrategyId)
+	b.WriteString("/")
+	b.WriteString(r.SchedulerId)
+	return b.String()
 }
 
 func New() *MemoryStore {
@@ -259,4 +270,42 @@ func (s *MemoryStore) GetSchedulers() ([]*definition.Scheduler, error) {
 	}
 	utils.SortSchedulers(list)
 	return list, nil
+}
+
+func dumpMap(b *strings.Builder, k string, v interface{}) {
+	b.WriteString(k)
+	b.WriteString(": ")
+	data, _ := json.Marshal(v)
+	b.Write(data)
+	b.WriteString("\n")
+}
+
+func (s *MemoryStore) Dump() string {
+	b := &strings.Builder{}
+
+	b.WriteString("Sequence:\n")
+	b.WriteString(strconv.Itoa(int(s.sequence)))
+	b.WriteString("\n")
+
+	b.WriteString("\nTasks:\n")
+	for k, v := range s.tasks {
+		dumpMap(b, k, v)
+	}
+
+	b.WriteString("\nStrategies:\n")
+	for k, v := range s.strategies {
+		dumpMap(b, k, v)
+	}
+
+	b.WriteString("\nRuntimes:\n")
+	for k, v := range s.runtimes {
+		dumpMap(b, k.String(), v)
+	}
+
+	b.WriteString("\nSchedulers:\n")
+	for k, v := range s.schedulers {
+		dumpMap(b, k, v)
+	}
+
+	return b.String()
 }

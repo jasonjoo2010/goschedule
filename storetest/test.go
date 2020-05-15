@@ -1,6 +1,7 @@
 package storetest
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -275,4 +276,29 @@ func DoTestScheduler(t *testing.T, s store.Store) {
 	list, err = s.GetSchedulers()
 	assert.Nil(t, err)
 	assert.Empty(t, list)
+}
+
+func DoTestDump(t *testing.T, s store.Store) {
+	scheduler := &definition.Scheduler{
+		Id: "demo-scheduler",
+	}
+	s.RegisterScheduler(scheduler)
+
+	strategy := &definition.Strategy{
+		Id: "demo-strategy",
+	}
+	s.CreateStrategy(strategy)
+
+	runtime := &definition.StrategyRuntime{
+		StrategyId:  "demo-strategy",
+		SchedulerId: "demo-scheduler",
+		Num:         93944,
+	}
+	s.SetStrategyRuntime(runtime)
+
+	str := s.Dump()
+	fmt.Println(str)
+	assert.Contains(t, str, "demo-scheduler")
+	assert.Contains(t, str, "demo-strategy")
+	assert.Contains(t, str, "93944")
 }

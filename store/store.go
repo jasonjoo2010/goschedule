@@ -62,4 +62,7 @@ type Store interface {
 	GetStrategyRuntimes(strategyId string) ([]*definition.StrategyRuntime, error)
 	SetStrategyRuntime(runtime *definition.StrategyRuntime) error
 	RemoveStrategyRuntime(strategyId, schedulerId string) error
+
+	// Dump dump data in storage in string format.
+	Dump() string
 }

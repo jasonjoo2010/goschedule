@@ -134,7 +134,7 @@ func (s *RedisStore) key(k string) string {
 	return "scheduler:" + k
 }
 
-func (s *RedisStore) keyTask() string {
+func (s *RedisStore) keyTasks() string {
 	return s.key("tasks")
 }
 
@@ -148,6 +148,10 @@ func (s *RedisStore) keySchedulers() string {
 
 func (s *RedisStore) keyRuntimes(strategyId string) string {
 	return s.key("runtimes/" + strategyId)
+}
+
+func (s *RedisStore) keySequence() string {
+	return s.key("sequence")
 }
 
 func (s *RedisStore) Lock() *distlock.DistLock {
@@ -171,7 +175,7 @@ func (s *RedisStore) Close() error {
 }
 
 func (s *RedisStore) Sequence() (uint64, error) {
-	key := s.key("sequence")
+	key := s.keySequence()
 	for i := 0; i < 2; i++ {
 		val, err := s.client.Incr(key).Result()
 		if err != nil {
@@ -190,12 +194,12 @@ func (s *RedisStore) Sequence() (uint64, error) {
 //
 
 func (s *RedisStore) GetTask(id string) (*definition.Task, error) {
-	key := s.keyTask()
+	key := s.keyTasks()
 	return parseTask(s.client.HGet(key, id).Result())
 }
 
 func (s *RedisStore) GetTasks() ([]*definition.Task, error) {
-	key := s.keyTask()
+	key := s.keyTasks()
 	cnt := s.client.HLen(key).Val()
 	if cnt == 0 {
 		return []*definition.Task{}, nil
@@ -221,7 +225,7 @@ func (s *RedisStore) CreateTask(task *definition.Task) error {
 		return store.AlreadyExist
 	}
 
-	key := s.keyTask()
+	key := s.keyTasks()
 	data, err := json.Marshal(task)
 	if err != nil {
 		return err
@@ -238,12 +242,12 @@ func (s *RedisStore) UpdateTask(task *definition.Task) error {
 	if err != nil {
 		return err
 	}
-	_, err = s.client.HSet(s.keyTask(), task.Id, string(data)).Result()
+	_, err = s.client.HSet(s.keyTasks(), task.Id, string(data)).Result()
 	return err
 }
 
 func (s *RedisStore) DeleteTask(id string) error {
-	cnt, err := s.client.HDel(s.keyTask(), id).Result()
+	cnt, err := s.client.HDel(s.keyTasks(), id).Result()
 	if cnt == 0 {
 		return store.NotExist
 	}
@@ -424,4 +428,50 @@ func (s *RedisStore) GetSchedulers() ([]*definition.Scheduler, error) {
 	}
 	utils.SortSchedulers(list)
 	return list, nil
+}
+
+func dumpMap(b *strings.Builder, m map[string]string) {
+	for k, v := range m {
+		b.WriteString("\t")
+		b.WriteString(k)
+		b.WriteString(": ")
+		b.WriteString(v)
+		b.WriteString("\n")
+	}
+}
+
+func (s *RedisStore) Dump() string {
+	b := &strings.Builder{}
+
+	b.WriteString("Sequence:\n")
+	b.WriteString(s.keySequence())
+	b.WriteString(": ")
+	b.WriteString(s.client.Get(s.keySequence()).Val())
+	b.WriteString("\n")
+
+	b.WriteString("\nTasks:\n")
+	b.WriteString(s.keyTasks())
+	b.WriteString(": \n")
+	dumpMap(b, s.client.HGetAll(s.keyTasks()).Val())
+
+	b.WriteString("\nStrategies:\n")
+	b.WriteString(s.keyStrategies())
+	b.WriteString(": \n")
+	dumpMap(b, s.client.HGetAll(s.keyStrategies()).Val())
+
+	b.WriteString("\nRuntimes:\n")
+	strategies, _ := s.GetStrategies()
+	for _, strategy := range strategies {
+		b.WriteString("\t")
+		b.WriteString(s.keyRuntimes(strategy.Id))
+		b.WriteString(":\n")
+		dumpMap(b, s.client.HGetAll(s.keyRuntimes(strategy.Id)).Val())
+	}
+
+	b.WriteString("\nSchedulers:\n")
+	b.WriteString(s.keySchedulers())
+	b.WriteString(": \n")
+	dumpMap(b, s.client.HGetAll(s.keySchedulers()).Val())
+
+	return b.String()
 }

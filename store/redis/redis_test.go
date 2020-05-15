@@ -49,3 +49,9 @@ func TestScheduler(t *testing.T) {
 	storetest.DoTestScheduler(t, s)
 	s.Close()
 }
+
+func TestDump(t *testing.T) {
+	s := newStorage()
+	storetest.DoTestDump(t, s)
+	s.Close()
+}
