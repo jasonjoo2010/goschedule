@@ -24,7 +24,7 @@ type FuncWorker struct {
 	parameter  string
 	notifier   chan int
 	fn         FuncInterface
-	sched      *cron.Schedule
+	sched      cron.Schedule
 	interval   time.Duration
 	started    bool
 	needStop   bool
@@ -47,10 +47,13 @@ func NewFunc(strategy definition.Strategy) (Worker, error) {
 		fn:              fn,
 	}
 	if strategy.Extra != nil {
-		if cronStr, ok := strategy.Extra["Crone"]; ok {
+		if cronStr, ok := strategy.Extra["Cron"]; ok {
 			parser := cron.NewParser(cron.Second | cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow)
-			if sched, err := parser.Parse(cronStr); err == nil {
-				w.sched = &sched
+			sched, err := parser.Parse(cronStr)
+			if err == nil {
+				w.sched = sched
+			} else {
+				logrus.Warn("Cron expression parsing failed: ", err.Error())
 			}
 		}
 		if millisStr, ok := strategy.Extra["Interval"]; ok {
@@ -69,9 +72,19 @@ func (w *FuncWorker) NeedStop() bool {
 
 func (w *FuncWorker) FuncExecutor() {
 	for {
+		// cron
+		if w.sched != nil {
+			now := time.Now()
+			next := w.sched.Next(now)
+			diff := next.Sub(now)
+			utils.Delay(w, diff)
+			if w.needStop {
+				break
+			}
+		}
 		w.fn(w.strategyId, w.parameter)
 		if w.interval > 0 {
-			utils.Delay(w, w.interval*time.Millisecond)
+			utils.Delay(w, w.interval)
 		}
 		if w.needStop {
 			break
