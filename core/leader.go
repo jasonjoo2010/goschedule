@@ -80,7 +80,7 @@ func (s *ScheduleManager) generateRuntimes() {
 				logrus.Info("Clean runtime for strategy: ", runtime.StrategyId)
 				s.store.RemoveStrategyRuntime(strategy.Id, s.scheduler.Id)
 				// stop the workers
-				s.stopWorkers(strategy.Id)
+				s.stopWorkers(strategy)
 			}
 		}
 	}
@@ -176,7 +176,7 @@ func (s *ScheduleManager) adjustWorkers() {
 				workers = workers[:len(workers)-utils.Abs(delta)]
 				// stop them
 				for _, w := range discards {
-					w.Stop(runtime.StrategyId)
+					w.Stop(strategy.Id, strategy.Parameter)
 				}
 			}
 			s.workersMap[runtime.StrategyId] = workers
@@ -199,20 +199,29 @@ func (s *ScheduleManager) schedule() {
 }
 
 // stopWorkers stop group of workers binded to specific strategy
-func (s *ScheduleManager) stopWorkers(strategyId string) {
-	workers, ok := s.workersMap[strategyId]
+func (s *ScheduleManager) stopWorkers(strategy *definition.Strategy) {
+	workers, ok := s.workersMap[strategy.Id]
 	if false == ok {
 		return
 	}
 	for _, w := range workers {
-		w.Stop(strategyId)
+		w.Stop(strategy.Id, strategy.Parameter)
 	}
-	delete(s.workersMap, strategyId)
+	delete(s.workersMap, strategy.Id)
 }
 
 func (s *ScheduleManager) stopAllWorkers() {
 	for k := range s.workersMap {
-		s.stopWorkers(k)
+		strategy, _ := s.store.GetStrategy(k)
+		if strategy == nil {
+			logrus.Warn("Strategy not found: ", k)
+			s.stopWorkers(&definition.Strategy{
+				Id:        k,
+				Parameter: "",
+			})
+		} else {
+			s.stopWorkers(strategy)
+		}
 	}
 }
 
