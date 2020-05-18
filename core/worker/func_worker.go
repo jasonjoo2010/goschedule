@@ -108,7 +108,7 @@ func (w *FuncWorker) Start(strategyId, parameter string) {
 	go w.FuncExecutor()
 }
 
-func (w *FuncWorker) Stop(strategyId string) {
+func (w *FuncWorker) Stop(strategyId, parameter string) {
 	w.needStop = true
 	timeout := time.NewTimer(w.TimeoutShutdown)
 	select {

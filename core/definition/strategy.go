@@ -22,6 +22,7 @@ type Strategy struct {
 	Bind                 string // resource name or type name to bind, cooperate with Kind
 	Parameter            string
 	Enabled              bool // Whether it should begin to schedule
+	SingleInstance       bool // Whether it's registered in single instanced
 	Extra                map[string]string
 }
 

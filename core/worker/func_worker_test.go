@@ -30,7 +30,7 @@ func TestFuncWorkerWithInterval(t *testing.T) {
 	w.Start(strategy.Id, strategy.Parameter)
 	time.Sleep(5 * time.Second)
 	assert.True(t, counter >= 5)
-	w.Stop(strategy.Id)
+	w.Stop(strategy.Id, strategy.Parameter)
 }
 
 func TestFuncWorkerWithCron(t *testing.T) {
@@ -48,5 +48,5 @@ func TestFuncWorkerWithCron(t *testing.T) {
 	w.Start(strategy.Id, strategy.Parameter)
 	time.Sleep(6 * time.Second)
 	assert.True(t, counter >= 3)
-	w.Stop(strategy.Id)
+	w.Stop(strategy.Id, strategy.Parameter)
 }
