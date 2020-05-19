@@ -1,4 +1,4 @@
-package task_worker
+package definition
 
 import (
 	"testing"

@@ -1,46 +1,35 @@
 package definition
 
 import (
-	"fmt"
 	"sync/atomic"
+	"time"
 )
 
 type Statistics struct {
-	FetchCount     uint64
-	FetchDataCount uint64
-	DealSuccess    uint64
-	DealFail       uint64
-	DealTime       uint64 // Millis
-	CompareCount   uint64
+	LastFetchTime     int64
+	SelectCount       int64
+	SelectItemCount   int64
+	OtherCompareCount int64
+	ExecuteSuccCount  int64 // concurrent
+	ExecuteFailCount  int64 // concurrent
+	ExecuteSpendTime  int64 // concurrent
 }
 
-func (s *Statistics) AddFetch(itemCount uint64) {
-	atomic.AddUint64(&s.FetchCount, 1)
-	if itemCount > 0 {
-		atomic.AddUint64(&s.FetchDataCount, itemCount)
+func (s *Statistics) Select(cnt int64) {
+	s.LastFetchTime = time.Now().Unix() * 1000
+	atomic.AddInt64(&s.SelectCount, 1)
+	if cnt > 0 {
+		atomic.AddInt64(&s.SelectItemCount, cnt)
 	}
 }
 
-func (s *Statistics) AddDealing(succ bool, costMillis uint64) {
+func (s *Statistics) Execute(succ bool, cost int64) {
+	if cost > 0 {
+		atomic.AddInt64(&s.ExecuteSpendTime, cost)
+	}
 	if succ {
-		atomic.AddUint64(&s.DealSuccess, 1)
+		atomic.AddInt64(&s.ExecuteSuccCount, 1)
 	} else {
-		atomic.AddUint64(&s.DealFail, 1)
+		atomic.AddInt64(&s.ExecuteFailCount, 1)
 	}
-	atomic.AddUint64(&s.DealTime, costMillis)
-}
-
-func (s *Statistics) AddCompare() {
-	atomic.AddUint64(&s.CompareCount, 1)
-}
-
-func (s *Statistics) String() string {
-	return fmt.Sprint(
-		"FetchCount=", s.FetchCount,
-		",FetchDataCount=", s.FetchDataCount,
-		",DealSuccess=", s.DealSuccess,
-		",DealFail=", s.DealFail,
-		",DealTime=", s.DealTime,
-		",CompareCount=", s.CompareCount,
-	)
 }

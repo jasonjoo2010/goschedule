@@ -71,7 +71,7 @@ type TaskWorker struct {
 
 	// statistics
 	NextBeginTime int64
-	Statistics    Statistics
+	Statistics    definition.Statistics
 
 	// TimeoutShutdown is the timeout when waiting to close the worker
 	TimeoutShutdown time.Duration
