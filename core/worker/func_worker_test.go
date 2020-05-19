@@ -40,8 +40,8 @@ func TestFuncWorkerWithCron(t *testing.T) {
 		Kind: definition.FuncKind,
 		Bind: "demo",
 		Extra: map[string]string{
-			"Interval": "500",
-			"Cron":     "*/2 * * * * ?",
+			"Interval":  "500",
+			"CronBegin": "*/2 * * * * ?",
 		},
 	}
 	w, _ := NewFunc(strategy)

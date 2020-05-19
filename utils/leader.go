@@ -41,3 +41,12 @@ func FetchLeader(uuids []string) string {
 func IsLeader(uuids []string, uuid string) bool {
 	return uuid == FetchLeader(uuids)
 }
+
+// OwnSign gets ownsign from strategyId, "" for no ownsign
+func OwnSign(strategyId string) string {
+	pos := strings.LastIndex(strategyId, "$")
+	if pos > 0 {
+		return strategyId[pos+1:]
+	}
+	return ""
+}

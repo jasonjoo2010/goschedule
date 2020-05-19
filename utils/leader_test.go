@@ -25,3 +25,10 @@ func TestIsLeader(t *testing.T) {
 	assert.False(t, IsLeader(arr, "asdf"))
 	assert.False(t, IsLeader(arr, "$000002"))
 }
+
+func TestOwnSign(t *testing.T) {
+	assert.Equal(t, "", OwnSign(""))
+	assert.Equal(t, "", OwnSign("test"))
+	assert.Equal(t, "Demo", OwnSign("test$Demo"))
+	assert.Equal(t, "BASE", OwnSign("test$a$BASE"))
+}

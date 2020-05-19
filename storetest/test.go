@@ -35,8 +35,8 @@ func DoTestSequence(t *testing.T, s store.Store) {
 
 func DoTestTask(t *testing.T, s store.Store) {
 	taskOri := &definition.Task{
-		Id:      "demo-task",
-		Threads: 3,
+		Id:            "demo-task",
+		ExecutorCount: 3,
 	}
 
 	// try to fetch not existed task
@@ -72,7 +72,7 @@ func DoTestTask(t *testing.T, s store.Store) {
 	assert.Equal(t, taskOri.Id, arr[0].Id)
 
 	// modify
-	taskOri.Threads = 44
+	taskOri.ExecutorCount = 44
 	err = s.UpdateTask(taskOri)
 	assert.Nil(t, err)
 
@@ -81,7 +81,7 @@ func DoTestTask(t *testing.T, s store.Store) {
 	assert.Nil(t, err)
 	assert.NotNil(t, task)
 	assert.Equal(t, taskOri.Id, task.Id)
-	assert.Equal(t, 44, task.Threads)
+	assert.Equal(t, 44, task.ExecutorCount)
 
 	// delete
 	err = s.DeleteTask(taskOri.Id)

@@ -29,25 +29,22 @@ import "encoding/json"
 type Model int
 
 const (
-	_ Model = iota
-	Sleep
-	NoSleep
+	Normal Model = iota
+	Stream
 )
 
 type Task struct {
 	Id              string
-	HeartbeatTime   int // In millis
-	LifeTime        int // Timeout to be treated dead
 	DelayWhenNoData int // Whether to delay specified time (millis) if no data selected
-	DelayWithData   int // Whether to delay specified time (millis) if something are selected
+	DelayWithData   int // Whether to delay specified time (millis) if something are selected out
 	FetchCount      int
-	ExecuteCount    int
-	Threads         int
+	BatchCount      int // If implement TaskBatch the maximum tasks in one call
+	ExecutorCount   int // 1 selector -> N executor(s)
 	Model           Model
-	Parameter       string
-	BindName        string // Binded to registry
+	Parameter       string // Parameter of task
+	Bind            string // Binded to registry
 	Items           []*TaskItem
-	MaxItems        int // max task items per Worker
+	MaxTaskItems    int // max task items per Worker
 
 	// format  0     *     *     *     *     ?
 	//         sec   min   hour  day   month week

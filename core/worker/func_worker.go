@@ -24,7 +24,8 @@ type FuncWorker struct {
 	parameter  string
 	notifier   chan int
 	fn         FuncInterface
-	sched      cron.Schedule
+	schedBegin cron.Schedule
+	schedEnd   cron.Schedule
 	interval   time.Duration
 	started    bool
 	needStop   bool
@@ -39,7 +40,7 @@ func NewFunc(strategy definition.Strategy) (Worker, error) {
 	}
 	fn := GetFunc(strategy.Bind)
 	if fn == nil {
-		return nil, errors.New("Count not get the binding func")
+		return nil, errors.New("Could not get the binding func")
 	}
 	w := &FuncWorker{
 		notifier:        make(chan int),
@@ -47,11 +48,20 @@ func NewFunc(strategy definition.Strategy) (Worker, error) {
 		fn:              fn,
 	}
 	if strategy.Extra != nil {
-		if cronStr, ok := strategy.Extra["Cron"]; ok {
+		if cronStr, ok := strategy.Extra["CronBegin"]; ok {
 			parser := cron.NewParser(cron.Second | cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow)
 			sched, err := parser.Parse(cronStr)
 			if err == nil {
-				w.sched = sched
+				w.schedBegin = sched
+			} else {
+				logrus.Warn("Cron expression parsing failed: ", err.Error())
+			}
+		}
+		if cronStr, ok := strategy.Extra["CronEnd"]; ok {
+			parser := cron.NewParser(cron.Second | cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow)
+			sched, err := parser.Parse(cronStr)
+			if err == nil {
+				w.schedEnd = sched
 			} else {
 				logrus.Warn("Cron expression parsing failed: ", err.Error())
 			}
@@ -62,7 +72,7 @@ func NewFunc(strategy definition.Strategy) (Worker, error) {
 			}
 		}
 	}
-	logrus.Info("Create a func worker, cron=", w.sched != nil, ", interval=", w.interval/time.Millisecond, "ms")
+	logrus.Info("Create a func worker, cron=", w.schedBegin, ", interval=", w.interval/time.Millisecond, "ms")
 	return w, nil
 }
 
@@ -73,15 +83,7 @@ func (w *FuncWorker) NeedStop() bool {
 func (w *FuncWorker) FuncExecutor() {
 	for {
 		// cron
-		if w.sched != nil {
-			now := time.Now()
-			next := w.sched.Next(now)
-			diff := next.Sub(now)
-			utils.Delay(w, diff)
-			if w.needStop {
-				break
-			}
-		}
+		utils.CronDelay(w, w.schedBegin, w.schedEnd)
 		w.fn(w.strategyId, w.parameter)
 		if w.interval > 0 {
 			utils.Delay(w, w.interval)
