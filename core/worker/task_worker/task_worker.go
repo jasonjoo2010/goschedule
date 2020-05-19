@@ -251,6 +251,7 @@ func (w *TaskWorker) selectOnce() {
 	arr_size := len(arr)
 	w.Statistics.Select(int64(arr_size))
 	if arr_size < 1 {
+		w.inCron = false
 		if w.intervalNoData > 0 {
 			utils.Delay(w, w.intervalNoData)
 		}
