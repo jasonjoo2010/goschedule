@@ -121,5 +121,5 @@ func (w *FuncWorker) Stop(strategyId, parameter string) {
 		// timeout
 		logrus.Error("Failed to stop a FuncWorker")
 	}
-	logrus.Error("Worker of strategy ", strategyId, " stopped")
+	logrus.Info("Worker of strategy ", strategyId, " stopped")
 }

@@ -34,17 +34,17 @@ const (
 )
 
 type Task struct {
-	Id              string
-	DelayWhenNoData int // Whether to delay specified time (millis) if no data selected
-	DelayWithData   int // Whether to delay specified time (millis) if something are selected out
-	FetchCount      int
-	BatchCount      int // If implement TaskBatch the maximum tasks in one call
-	ExecutorCount   int // 1 selector -> N executor(s)
-	Model           Model
-	Parameter       string // Parameter of task
-	Bind            string // Binded to registry
-	Items           []*TaskItem
-	MaxTaskItems    int // max task items per Worker
+	Id             string
+	IntervalNoData int // Whether to delay specified time (millis) if no data selected
+	Interval       int // Whether to delay specified time (millis) if something are selected out
+	FetchCount     int
+	BatchCount     int // If implement TaskBatch the maximum tasks in one call
+	ExecutorCount  int // 1 selector -> N executor(s)
+	Model          Model
+	Parameter      string // Parameter of task
+	Bind           string // Binded to registry
+	Items          []*TaskItem
+	MaxTaskItems   int // max task items per Worker
 
 	// format  0     *     *     *     *     ?
 	//         sec   min   hour  day   month week

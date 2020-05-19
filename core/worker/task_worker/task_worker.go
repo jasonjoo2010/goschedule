@@ -177,11 +177,11 @@ func NewTask(task definition.Task, single bool) (worker.Worker, error) {
 			logrus.Warn("Cron expression of CronEnd parsing failed: ", err.Error())
 		}
 	}
-	if task.DelayWithData > 0 {
-		w.interval = time.Duration(task.DelayWithData) * time.Millisecond
+	if task.Interval > 0 {
+		w.interval = time.Duration(task.Interval) * time.Millisecond
 	}
-	if task.DelayWhenNoData > 0 {
-		w.intervalNoData = time.Duration(task.DelayWhenNoData) * time.Millisecond
+	if task.IntervalNoData > 0 {
+		w.intervalNoData = time.Duration(task.IntervalNoData) * time.Millisecond
 	}
 	if task.Model == definition.Stream {
 		w.model = NewStreamModel(w)
