@@ -36,12 +36,12 @@ func TestFuncWorkerWithInterval(t *testing.T) {
 func TestFuncWorkerWithCron(t *testing.T) {
 	RegisterFunc("demo", testFunc)
 	strategy := definition.Strategy{
-		Id:   "s0",
-		Kind: definition.FuncKind,
-		Bind: "demo",
+		Id:        "s0",
+		Kind:      definition.FuncKind,
+		Bind:      "demo",
+		CronBegin: "*/2 * * * * ?",
 		Extra: map[string]string{
-			"Interval":  "500",
-			"CronBegin": "*/2 * * * * ?",
+			"Interval": "500",
 		},
 	}
 	w, _ := NewFunc(strategy)

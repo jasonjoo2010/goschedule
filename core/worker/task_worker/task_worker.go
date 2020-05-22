@@ -7,6 +7,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/jasonjoo2010/goschedule/core"
 	"github.com/jasonjoo2010/goschedule/core/definition"
 	"github.com/jasonjoo2010/goschedule/core/worker"
 	"github.com/jasonjoo2010/goschedule/utils"
@@ -53,8 +54,11 @@ type TaskWorker struct {
 	strategyId     string
 	parameter      string
 	ownSign        string
+	strategyDefine definition.Strategy
 	taskDefine     definition.Task
 	taskItems      []definition.TaskItem
+	manager        *core.ScheduleManager
+	runtime        definition.TaskRuntime
 	notifier       chan int
 	data           chan interface{}
 	model          TaskModel
@@ -128,8 +132,13 @@ func RegisterTaskInstName(name string, task TaskBase) {
 
 // NewTask creates a new task and initials necessary fields
 //	Please don't initial TaskWorker manually
-func NewTask(task definition.Task, single bool) (worker.Worker, error) {
+func NewTask(strategy definition.Strategy, task definition.Task, single bool, manager *core.ScheduleManager) (worker.Worker, error) {
 	var inst TaskBase
+	sequence, err := manager.Store().Sequence()
+	if err != nil {
+		logrus.Error("Generate sequence from storage failed: ", err.Error())
+		return nil, errors.New("Generate sequence from storage failed: " + err.Error())
+	}
 	if single {
 		inst = GetTaskInst(task.Bind)
 		if inst == nil {
@@ -155,28 +164,27 @@ func NewTask(task definition.Task, single bool) (worker.Worker, error) {
 		data:            make(chan interface{}, utils.Max(10, task.FetchCount*2)),
 		TimeoutShutdown: 10 * time.Second,
 		task:            inst,
+		strategyDefine:  strategy,
 		taskDefine:      task,
 		taskItems:       make([]definition.TaskItem, 0),
 		parameter:       task.Parameter,
+		manager:         manager,
+		runtime: definition.TaskRuntime{
+			Id:            utils.GenerateUUID(sequence),
+			Version:       1,
+			CreateTime:    time.Now().Unix() * 1000,
+			LastHeartBeat: time.Now().Unix() * 1000,
+			Hostname:      utils.GetHostName(),
+			Ip:            utils.GetHostIPv4(),
+			ExecutorCount: task.ExecutorCount,
+			SchedulerId:   manager.Scheduler().Id,
+			StrategyId:    strategy.Id,
+			OwnSign:       utils.OwnSign(strategy.Id),
+			TaskId:        task.Id,
+			Bind:          task.Bind,
+		},
 	}
-	// TODO taskitems
-	parser := cron.NewParser(cron.Second | cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow)
-	if task.CronBegin != "" {
-		sched, err := parser.Parse(task.CronBegin)
-		if err == nil {
-			w.schedStart = sched
-		} else {
-			logrus.Warn("Cron expression of CronBegin parsing failed: ", err.Error())
-		}
-	}
-	if task.CronEnd != "" {
-		sched, err := parser.Parse(task.CronEnd)
-		if err == nil {
-			w.schedEnd = sched
-		} else {
-			logrus.Warn("Cron expression of CronEnd parsing failed: ", err.Error())
-		}
-	}
+	w.schedStart, w.schedEnd = utils.ParseStrategyCron(&strategy)
 	if task.Interval > 0 {
 		w.interval = time.Duration(task.Interval) * time.Millisecond
 	}
@@ -234,11 +242,14 @@ func (w *TaskWorker) shouldRun() bool {
 }
 
 func (w *TaskWorker) executeOnceOrWait() {
-	w.executor.ExecuteAndWaitWhenEmpty()
+	w.executor.ExecuteOrWait()
 }
 
 // inner loop, select() -> execute()
 func (w *TaskWorker) selectOnce() {
+	if w.needStop {
+		return
+	}
 	// lock to block other routine from select concurrently (Especially in stream model)
 	w.Lock()
 	defer w.Unlock()
@@ -247,6 +258,13 @@ func (w *TaskWorker) selectOnce() {
 			logrus.Error("Selecting error: ", r)
 		}
 	}()
+	if w.manager.Store().ShouldTaskReloadItems(w.taskDefine.Id, w.runtime.Id) {
+		// make sure no queued items
+		for len(w.data) > 0 {
+			time.Sleep(100 * time.Millisecond)
+		}
+		w.reloadTaskItems()
+	}
 	arr := w.task.Select(w.parameter, w.ownSign, w.taskItems, w.taskDefine.FetchCount)
 	arr_size := len(arr)
 	w.Statistics.Select(int64(arr_size))
@@ -289,6 +307,10 @@ func (w *TaskWorker) loopMain() {
 	defer func() {
 		atomic.AddInt32(&w.executors, -1)
 		close(w.data)
+		// empty the queue
+		for len(w.data) > 0 {
+			w.executor.ExecuteOrReturn()
+		}
 		// wait executors
 		for w.executors > 0 {
 			time.Sleep(10 * time.Millisecond)
@@ -330,6 +352,8 @@ func (w *TaskWorker) Start(strategyId, parameter string) {
 		w.parameter = parameter
 	}
 	go w.loopMain()
+	go w.heartbeat()
+	go w.schedule()
 }
 
 func (w *TaskWorker) Stop(strategyId, parameter string) {
@@ -337,13 +361,22 @@ func (w *TaskWorker) Stop(strategyId, parameter string) {
 	defer w.Unlock()
 	w.needStop = true
 	timeout := time.NewTimer(w.TimeoutShutdown)
-	select {
-	case <-w.notifier:
-		// succ
-		timeout.Stop()
-	case <-timeout.C:
-		// timeout
-		logrus.Error("Failed to stop a FuncWorker")
+	mask := 0
+LOOP:
+	for {
+		select {
+		case v := <-w.notifier:
+			mask |= v
+			if mask == 7 {
+				// succ
+				timeout.Stop()
+				break LOOP
+			}
+		case <-timeout.C:
+			// timeout
+			logrus.Error("Failed to stop a FuncWorker")
+			break LOOP
+		}
 	}
 	logrus.Error("Worker of strategy ", strategyId, " stopped")
 }

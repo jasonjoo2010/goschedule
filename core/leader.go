@@ -23,7 +23,7 @@ func (s *ScheduleManager) isLeader(strategyId string) bool {
 	return utils.IsLeader(arr, s.scheduler.Id)
 }
 
-func (s *ScheduleManager) cleanDeadScheduler(schedulerId string) {
+func (s *ScheduleManager) cleanScheduler(schedulerId string) {
 	s.store.UnregisterScheduler(schedulerId)
 	// clean dead runtimes binded to it
 	strategies, err := s.store.GetStrategies()
@@ -46,7 +46,7 @@ func (s *ScheduleManager) clearExpiredSchedulers() {
 	for _, scheduler := range schedulers {
 		if now-scheduler.LastHeartbeat > s.DeathTimeout.Milliseconds() {
 			logrus.Info("Clear expired scheduler: ", scheduler.Id, ", last reach at ", scheduler.LastHeartbeat)
-			s.cleanDeadScheduler(scheduler.Id)
+			s.cleanScheduler(scheduler.Id)
 		}
 	}
 }

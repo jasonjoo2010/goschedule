@@ -244,6 +244,187 @@ func DoTestStrategyRuntime(t *testing.T, s store.Store) {
 	assert.Nil(t, runtime)
 }
 
+func DoTestTaskRuntime(t *testing.T, s store.Store) {
+	runtimeOri1 := &definition.TaskRuntime{
+		Id:          "r0",
+		StrategyId:  "strategy1",
+		TaskId:      "task1",
+		SchedulerId: "scheduler1",
+	}
+	runtimeOri2 := &definition.TaskRuntime{
+		Id:          "r1",
+		StrategyId:  "strategy1",
+		TaskId:      "task1",
+		SchedulerId: "scheduler2",
+	}
+	runtimeOri3 := &definition.TaskRuntime{
+		Id:          "r2",
+		StrategyId:  "strategy1",
+		TaskId:      "task1",
+		SchedulerId: "scheduler3",
+	}
+	runtimeOri4 := &definition.TaskRuntime{
+		Id:          "r3",
+		StrategyId:  "strategy2",
+		TaskId:      "task2",
+		SchedulerId: "scheduler1",
+	}
+	runtimeOri5 := &definition.TaskRuntime{
+		Id:          "r4",
+		StrategyId:  "strategy2",
+		TaskId:      "task2",
+		SchedulerId: "scheduler2",
+	}
+
+	// try to fetch not existed runtime
+	runtime, err := s.GetTaskRuntime(runtimeOri1.TaskId, runtimeOri1.Id)
+	assert.Nil(t, runtime)
+	assert.Equal(t, store.NotExist, err)
+
+	// try to delete not existed runtime
+	err = s.RemoveTaskRuntime(runtimeOri1.TaskId, runtimeOri1.Id)
+	assert.Nil(t, err)
+
+	// try to create runtime
+	err = s.SetTaskRuntime(runtimeOri1)
+	assert.Nil(t, err)
+
+	// fetch it back
+	runtime, err = s.GetTaskRuntime(runtimeOri1.TaskId, runtimeOri1.Id)
+	assert.Nil(t, err)
+	assert.NotNil(t, runtime)
+	assert.Equal(t, runtimeOri1.TaskId, runtime.TaskId)
+	assert.Equal(t, runtimeOri1.Id, runtime.Id)
+
+	// try to recreate runtime
+	err = s.SetTaskRuntime(runtimeOri1)
+	assert.Nil(t, err)
+
+	// register the rest
+	s.SetTaskRuntime(runtimeOri2)
+	s.SetTaskRuntime(runtimeOri3)
+	s.SetTaskRuntime(runtimeOri4)
+	s.SetTaskRuntime(runtimeOri5)
+
+	// verify list
+	arr, err := s.GetTaskRuntimes(runtimeOri1.TaskId)
+	assert.Nil(t, err)
+	assert.NotNil(t, arr)
+	assert.Equal(t, 3, len(arr))
+
+	arr, err = s.GetTaskRuntimes(runtimeOri4.TaskId)
+	assert.Nil(t, err)
+	assert.NotNil(t, arr)
+	assert.Equal(t, 2, len(arr))
+
+	// delete
+	err = s.RemoveTaskRuntime(runtimeOri1.TaskId, runtimeOri1.Id)
+	assert.Nil(t, err)
+
+	// re-delete
+	err = s.RemoveStrategyRuntime(runtimeOri1.StrategyId, runtimeOri1.SchedulerId)
+	assert.Nil(t, err)
+
+	// verify delete
+	arr, err = s.GetTaskRuntimes(runtimeOri1.TaskId)
+	assert.Nil(t, err)
+	assert.NotNil(t, arr)
+	assert.Equal(t, 2, len(arr))
+
+	runtime, err = s.GetTaskRuntime(runtimeOri1.TaskId, runtimeOri1.Id)
+	assert.NotNil(t, err)
+	assert.Equal(t, store.NotExist, err)
+	assert.Nil(t, runtime)
+}
+
+func DoTestTaskAssignment(t *testing.T, s store.Store) {
+	assignmentOri1 := &definition.TaskAssignment{
+		TaskId:    "task1",
+		ItemId:    "a",
+		RuntimeId: "r0",
+	}
+	assignmentOri2 := &definition.TaskAssignment{
+		TaskId:    "task1",
+		ItemId:    "b",
+		RuntimeId: "r1",
+	}
+	assignmentOri3 := &definition.TaskAssignment{
+		TaskId:    "task1",
+		ItemId:    "c",
+		RuntimeId: "r0",
+	}
+	assignmentOri4 := &definition.TaskAssignment{
+		TaskId:    "task2",
+		ItemId:    "a",
+		RuntimeId: "r0",
+	}
+	assignmentOri5 := &definition.TaskAssignment{
+		TaskId:    "task2",
+		ItemId:    "b",
+		RuntimeId: "r1",
+	}
+
+	// try to fetch not existed data
+	assignment, err := s.GetTaskAssignment(assignmentOri1.TaskId, assignmentOri1.ItemId)
+	assert.Nil(t, assignment)
+	assert.Equal(t, store.NotExist, err)
+
+	// try to delete not existed data
+	err = s.RemoveTaskAssignment(assignmentOri1.TaskId, assignmentOri1.ItemId)
+	assert.Nil(t, err)
+
+	// try to create one
+	err = s.SetTaskAssignment(assignmentOri1)
+	assert.Nil(t, err)
+
+	// fetch it back
+	assignment, err = s.GetTaskAssignment(assignmentOri1.TaskId, assignmentOri1.ItemId)
+	assert.Nil(t, err)
+	assert.NotNil(t, assignment)
+	assert.Equal(t, assignmentOri1.TaskId, assignment.TaskId)
+	assert.Equal(t, assignmentOri1.ItemId, assignment.ItemId)
+
+	// try to recreate runtime
+	err = s.SetTaskAssignment(assignmentOri1)
+	assert.Nil(t, err)
+
+	// register the rest
+	s.SetTaskAssignment(assignmentOri2)
+	s.SetTaskAssignment(assignmentOri3)
+	s.SetTaskAssignment(assignmentOri4)
+	s.SetTaskAssignment(assignmentOri5)
+
+	// verify list
+	arr, err := s.GetTaskAssignments(assignmentOri1.TaskId)
+	assert.Nil(t, err)
+	assert.NotNil(t, arr)
+	assert.Equal(t, 3, len(arr))
+
+	arr, err = s.GetTaskAssignments(assignmentOri4.TaskId)
+	assert.Nil(t, err)
+	assert.NotNil(t, arr)
+	assert.Equal(t, 2, len(arr))
+
+	// delete
+	err = s.RemoveTaskAssignment(assignmentOri1.TaskId, assignmentOri1.ItemId)
+	assert.Nil(t, err)
+
+	// re-delete
+	err = s.RemoveStrategyRuntime(assignmentOri1.TaskId, assignmentOri1.ItemId)
+	assert.Nil(t, err)
+
+	// verify delete
+	arr, err = s.GetTaskAssignments(assignmentOri1.TaskId)
+	assert.Nil(t, err)
+	assert.NotNil(t, arr)
+	assert.Equal(t, 2, len(arr))
+
+	assignment, err = s.GetTaskAssignment(assignmentOri1.TaskId, assignmentOri1.ItemId)
+	assert.NotNil(t, err)
+	assert.Equal(t, store.NotExist, err)
+	assert.Nil(t, assignment)
+}
+
 func DoTestScheduler(t *testing.T, s store.Store) {
 	schedulerOri := &definition.Scheduler{
 		Id: "demo-scheduler",
@@ -278,6 +459,22 @@ func DoTestScheduler(t *testing.T, s store.Store) {
 	assert.Empty(t, list)
 }
 
+func DoTestTaskReloadItems(t *testing.T, s store.Store) {
+	assert.Nil(t, s.ClearTaskReloadItems("t0", "a0"))
+	assert.Nil(t, s.ClearTaskReloadItems("t0", "a1"))
+	assert.Nil(t, s.ClearTaskReloadItems("t0", "a2"))
+	assert.False(t, s.ShouldTaskReloadItems("t0", "a0"))
+	assert.False(t, s.ShouldTaskReloadItems("t0", "a1"))
+	assert.False(t, s.ShouldTaskReloadItems("t0", "a2"))
+	assert.Nil(t, s.RequireTaskReloadItems("t0", "a1"))
+	assert.Nil(t, s.RequireTaskReloadItems("t0", "a2"))
+	assert.False(t, s.ShouldTaskReloadItems("t0", "a0"))
+	assert.True(t, s.ShouldTaskReloadItems("t0", "a1"))
+	assert.True(t, s.ShouldTaskReloadItems("t0", "a2"))
+	assert.Nil(t, s.ClearTaskReloadItems("t0", "a1"))
+	assert.Nil(t, s.ClearTaskReloadItems("t0", "a2"))
+}
+
 func DoTestDump(t *testing.T, s store.Store) {
 	scheduler := &definition.Scheduler{
 		Id: "demo-scheduler",
@@ -301,4 +498,8 @@ func DoTestDump(t *testing.T, s store.Store) {
 	assert.Contains(t, str, "demo-scheduler")
 	assert.Contains(t, str, "demo-strategy")
 	assert.Contains(t, str, "93944")
+
+	s.RemoveStrategyRuntime(runtime.StrategyId, runtime.SchedulerId)
+	s.DeleteStrategy(strategy.Id)
+	s.UnregisterScheduler(scheduler.Id)
 }

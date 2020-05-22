@@ -23,7 +23,13 @@ type Strategy struct {
 	Parameter            string
 	Enabled              bool // Whether it should begin to schedule
 	SingleInstance       bool // Whether it's registered in single instanced
-	Extra                map[string]string
+
+	// format  0     *     *     *     *     ?
+	//         sec   min   hour  day   month week
+	CronBegin, CronEnd string
+
+	// Interval for FuncWorker
+	Extra map[string]string
 }
 
 func (s *Strategy) String() string {

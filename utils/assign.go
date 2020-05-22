@@ -101,3 +101,26 @@ func CanSchedule(ipList []string, hostname, ip string) bool {
 	}
 	return false
 }
+
+// ContainsTaskItem returns whether specific itemId existed in slice
+func ContainsTaskItem(arr []definition.TaskItem, itemId string) bool {
+	for _, item := range arr {
+		if item.Id == itemId {
+			return true
+		}
+	}
+	return false
+}
+
+// RemoveTaskItem remove specific task item from slice
+func RemoveTaskItem(arr []definition.TaskItem, itemId string) []definition.TaskItem {
+	if len(arr) < 1 {
+		return arr
+	}
+	for i, item := range arr {
+		if item.Id == itemId {
+			return append(arr[:i], arr[i+1:]...)
+		}
+	}
+	return arr
+}

@@ -30,18 +30,57 @@ func (m *BatchExecutor) execute(items []interface{}) {
 	cost = int64(time.Now().Sub(t0) / time.Millisecond)
 }
 
-func (m *BatchExecutor) ExecuteAndWaitWhenEmpty() {
+func (m *BatchExecutor) ExecuteOrReturn() {
+	var (
+		ok   bool
+		item interface{}
+	)
+	select {
+	case item, ok = <-m.worker.data:
+	default:
+		return
+	}
+	if ok {
+		// try to fill arr
+		items := m.pool.Get().([]interface{})
+		items = append(items, item)
+	LOOP:
+		for len(items) < m.worker.taskDefine.BatchCount {
+			select {
+			case item, ok = <-m.worker.data:
+				if ok {
+					items = append(items, item)
+				} else {
+					break LOOP
+				}
+			default:
+				break LOOP
+			}
+		}
+		if len(items) > 0 {
+			m.execute(items)
+			m.pool.Put(items[:0])
+		}
+	}
+}
+
+func (m *BatchExecutor) ExecuteOrWait() {
 	item, ok := <-m.worker.data
 	if ok {
 		// try to fill arr
 		items := m.pool.Get().([]interface{})
 		items = append(items, item)
+	LOOP:
 		for len(items) < m.worker.taskDefine.BatchCount {
 			select {
-			case item = <-m.worker.data:
-				items = append(items, item)
+			case item, ok = <-m.worker.data:
+				if ok {
+					items = append(items, item)
+				} else {
+					break LOOP
+				}
 			default:
-				break
+				break LOOP
 			}
 		}
 		m.execute(items)

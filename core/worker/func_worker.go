@@ -47,25 +47,8 @@ func NewFunc(strategy definition.Strategy) (Worker, error) {
 		TimeoutShutdown: 10 * time.Second,
 		fn:              fn,
 	}
+	w.schedBegin, w.schedEnd = utils.ParseStrategyCron(&strategy)
 	if strategy.Extra != nil {
-		if cronStr, ok := strategy.Extra["CronBegin"]; ok {
-			parser := cron.NewParser(cron.Second | cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow)
-			sched, err := parser.Parse(cronStr)
-			if err == nil {
-				w.schedBegin = sched
-			} else {
-				logrus.Warn("Cron expression parsing failed: ", err.Error())
-			}
-		}
-		if cronStr, ok := strategy.Extra["CronEnd"]; ok {
-			parser := cron.NewParser(cron.Second | cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow)
-			sched, err := parser.Parse(cronStr)
-			if err == nil {
-				w.schedEnd = sched
-			} else {
-				logrus.Warn("Cron expression parsing failed: ", err.Error())
-			}
-		}
 		if millisStr, ok := strategy.Extra["Interval"]; ok {
 			if millis, err := strconv.Atoi(millisStr); err == nil && millis > 0 {
 				w.interval = time.Duration(millis) * time.Millisecond

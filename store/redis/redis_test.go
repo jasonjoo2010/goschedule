@@ -38,9 +38,27 @@ func TestTask(t *testing.T) {
 	s.Close()
 }
 
+func TestTaskRuntime(t *testing.T) {
+	s := newStorage()
+	storetest.DoTestTaskRuntime(t, s)
+	s.Close()
+}
+
+func TestTaskAssignment(t *testing.T) {
+	s := newStorage()
+	storetest.DoTestTaskAssignment(t, s)
+	s.Close()
+}
+
 func TestStrategy(t *testing.T) {
 	s := newStorage()
 	storetest.DoTestStrategy(t, s)
+	s.Close()
+}
+
+func TestStrategyRuntime(t *testing.T) {
+	s := newStorage()
+	storetest.DoTestStrategyRuntime(t, s)
 	s.Close()
 }
 
@@ -53,5 +71,11 @@ func TestScheduler(t *testing.T) {
 func TestDump(t *testing.T) {
 	s := newStorage()
 	storetest.DoTestDump(t, s)
+	s.Close()
+}
+
+func TestTaskReload(t *testing.T) {
+	s := newStorage()
+	storetest.DoTestTaskReloadItems(t, s)
 	s.Close()
 }

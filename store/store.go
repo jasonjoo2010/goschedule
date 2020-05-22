@@ -39,6 +39,7 @@ type Store interface {
 
 	Lock() *distlock.DistLock
 
+	// scheduler
 	RegisterScheduler(scheduler *definition.Scheduler) error
 	UnregisterScheduler(id string) error
 	// GetSchedulers returns all the schedulers and sorted by scheduler's id base on sequence number in ascent
@@ -52,12 +53,29 @@ type Store interface {
 	UpdateTask(task *definition.Task) error
 	DeleteTask(id string) error
 
+	// task runtimes
+	GetTaskRuntime(taskId, id string) (*definition.TaskRuntime, error)
+	GetTaskRuntimes(taskId string) ([]*definition.TaskRuntime, error)
+	SetTaskRuntime(runtime *definition.TaskRuntime) error
+	RemoveTaskRuntime(taskId, id string) error
+	ShouldTaskReloadItems(taskId, id string) bool
+	RequireTaskReloadItems(taskId, id string) error
+	ClearTaskReloadItems(taskId, id string) error
+
+	// task assignments
+	GetTaskAssignment(taskId, itemId string) (*definition.TaskAssignment, error)
+	GetTaskAssignments(taskId string) ([]*definition.TaskAssignment, error)
+	SetTaskAssignment(assignment *definition.TaskAssignment) error
+	RemoveTaskAssignment(taskId, itemId string) error
+
+	// strategy related
 	GetStrategy(id string) (*definition.Strategy, error)
 	GetStrategies() ([]*definition.Strategy, error)
 	CreateStrategy(strategy *definition.Strategy) error
 	UpdateStrategy(strategy *definition.Strategy) error
 	DeleteStrategy(id string) error
 
+	// strategy runtimes
 	GetStrategyRuntime(strategyId, schedulerId string) (*definition.StrategyRuntime, error)
 	GetStrategyRuntimes(strategyId string) ([]*definition.StrategyRuntime, error)
 	SetStrategyRuntime(runtime *definition.StrategyRuntime) error

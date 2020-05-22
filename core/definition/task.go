@@ -43,13 +43,14 @@ type Task struct {
 	Model          Model
 	Parameter      string // Parameter of task
 	Bind           string // Binded to registry
+	SingleInstance bool   // Whether it's single instanced
 	Items          []*TaskItem
 	MaxTaskItems   int // max task items per Worker
 
-	// format  0     *     *     *     *     ?
-	//         sec   min   hour  day   month week
-	CronBegin string
-	CronEnd   string
+	// Interval of heartbeat, in millis
+	HeartbeatInterval int
+	// Timeout to be death, in millis
+	DeathTimeout int
 }
 
 func (t *Task) String() string {

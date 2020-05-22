@@ -22,13 +22,5 @@ func (s *ScheduleManager) heartbeat() {
 		utils.Delay(s, s.HeartbeatInterval)
 	}
 
-	// unregister runtimes from store when stop
-	strategies, err := s.store.GetStrategies()
-	if err == nil {
-		for _, strategy := range strategies {
-			s.store.RemoveStrategyRuntime(strategy.Id, s.scheduler.Id)
-		}
-	}
-	// unregister self from store when stop
-	s.store.UnregisterScheduler(s.scheduler.Id)
+	s.cleanScheduler(s.scheduler.Id)
 }

@@ -16,35 +16,41 @@ import (
 )
 
 type MemoryStore struct {
-	sequence   uint64
-	mutex      *sync.Mutex
-	lock       *distlock.DistLock
-	tasks      map[string]*definition.Task
-	strategies map[string]*definition.Strategy
-	schedulers map[string]*definition.Scheduler
-	runtimes   map[runtimeKey]*definition.StrategyRuntime
+	sequence        uint64
+	mutex           *sync.Mutex
+	lock            *distlock.DistLock
+	tasks           map[string]*definition.Task
+	strategies      map[string]*definition.Strategy
+	schedulers      map[string]*definition.Scheduler
+	runtimes        map[runtimeKey]*definition.StrategyRuntime
+	taskRuntimes    map[runtimeKey]*definition.TaskRuntime
+	taskReloadFlags map[runtimeKey]bool
+	taskAssignments map[runtimeKey]*definition.TaskAssignment
 }
 
 type runtimeKey struct {
-	StrategyId, SchedulerId string
+	left, right string
 }
 
 func (r *runtimeKey) String() string {
 	b := strings.Builder{}
-	b.WriteString(r.StrategyId)
+	b.WriteString(r.left)
 	b.WriteString("/")
-	b.WriteString(r.SchedulerId)
+	b.WriteString(r.right)
 	return b.String()
 }
 
 func New() *MemoryStore {
 	return &MemoryStore{
-		mutex:      &sync.Mutex{},
-		lock:       distlock.NewMutex("", 60*time.Second, lockstore.New()),
-		tasks:      make(map[string]*definition.Task),
-		strategies: make(map[string]*definition.Strategy),
-		schedulers: make(map[string]*definition.Scheduler),
-		runtimes:   make(map[runtimeKey]*definition.StrategyRuntime),
+		mutex:           &sync.Mutex{},
+		lock:            distlock.NewMutex("", 60*time.Second, lockstore.New()),
+		tasks:           make(map[string]*definition.Task),
+		strategies:      make(map[string]*definition.Strategy),
+		schedulers:      make(map[string]*definition.Scheduler),
+		runtimes:        make(map[runtimeKey]*definition.StrategyRuntime),
+		taskRuntimes:    make(map[runtimeKey]*definition.TaskRuntime),
+		taskAssignments: make(map[runtimeKey]*definition.TaskAssignment),
+		taskReloadFlags: make(map[runtimeKey]bool),
 	}
 }
 
@@ -127,6 +133,115 @@ func (s *MemoryStore) DeleteTask(id string) error {
 }
 
 //
+// task runtimes
+//
+
+func (s *MemoryStore) GetTaskRuntime(taskId, id string) (*definition.TaskRuntime, error) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	t, ok := s.taskRuntimes[runtimeKey{taskId, id}]
+	if ok {
+		r := *t
+		return &r, nil
+	}
+	return nil, store.NotExist
+}
+
+func (s *MemoryStore) GetTaskRuntimes(taskId string) ([]*definition.TaskRuntime, error) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	arr := make([]*definition.TaskRuntime, 0, 1)
+	for k, v := range s.taskRuntimes {
+		if k.left == taskId {
+			r := *v
+			arr = append(arr, &r)
+		}
+	}
+	return arr, nil
+}
+
+func (s *MemoryStore) SetTaskRuntime(runtime *definition.TaskRuntime) error {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	r := *runtime
+	s.taskRuntimes[runtimeKey{runtime.TaskId, runtime.Id}] = &r
+	return nil
+}
+
+func (s *MemoryStore) RemoveTaskRuntime(taskId, id string) error {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	delete(s.taskRuntimes, runtimeKey{taskId, id})
+	return nil
+}
+
+func (s *MemoryStore) ShouldTaskReloadItems(taskId, id string) bool {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	if val, ok := s.taskReloadFlags[runtimeKey{taskId, id}]; ok {
+		return val
+	}
+	return false
+}
+
+func (s *MemoryStore) RequireTaskReloadItems(taskId, id string) error {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	s.taskReloadFlags[runtimeKey{taskId, id}] = true
+	return nil
+}
+
+func (s *MemoryStore) ClearTaskReloadItems(taskId, id string) error {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	s.taskReloadFlags[runtimeKey{taskId, id}] = false
+	return nil
+}
+
+//
+// task assignments
+//
+
+func (s *MemoryStore) GetTaskAssignment(taskId, itemId string) (*definition.TaskAssignment, error) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	t, ok := s.taskAssignments[runtimeKey{taskId, itemId}]
+	if ok {
+		r := *t
+		return &r, nil
+	}
+	return nil, store.NotExist
+}
+
+func (s *MemoryStore) GetTaskAssignments(taskId string) ([]*definition.TaskAssignment, error) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	arr := make([]*definition.TaskAssignment, 0, 1)
+	for k, v := range s.taskAssignments {
+		if k.left == taskId {
+			r := *v
+			arr = append(arr, &r)
+		}
+	}
+	return arr, nil
+}
+
+func (s *MemoryStore) SetTaskAssignment(assignment *definition.TaskAssignment) error {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	r := *assignment
+	s.taskAssignments[runtimeKey{r.TaskId, r.ItemId}] = &r
+	return nil
+}
+
+func (s *MemoryStore) RemoveTaskAssignment(taskId, itemId string) error {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	delete(s.taskAssignments, runtimeKey{taskId, itemId})
+	return nil
+}
+
+//
 // Strategy related
 //
 
@@ -205,7 +320,7 @@ func (s *MemoryStore) GetStrategyRuntimes(strategyId string) ([]*definition.Stra
 	defer s.mutex.Unlock()
 	arr := make([]*definition.StrategyRuntime, 0, 1)
 	for k, v := range s.runtimes {
-		if k.StrategyId == strategyId {
+		if k.left == strategyId {
 			r := *v
 			arr = append(arr, &r)
 		}
@@ -290,6 +405,21 @@ func (s *MemoryStore) Dump() string {
 	b.WriteString("\nTasks:\n")
 	for k, v := range s.tasks {
 		dumpMap(b, k, v)
+	}
+
+	b.WriteString("\nTaskRuntimes:\n")
+	for k, v := range s.taskRuntimes {
+		dumpMap(b, k.String(), v)
+	}
+
+	b.WriteString("\nTaskReloads:\n")
+	for k, v := range s.taskReloadFlags {
+		dumpMap(b, k.String(), v)
+	}
+
+	b.WriteString("\nTaskAssignments:\n")
+	for k, v := range s.taskAssignments {
+		dumpMap(b, k.String(), v)
 	}
 
 	b.WriteString("\nStrategies:\n")

@@ -33,13 +33,17 @@ func TestExecutorSingle(t *testing.T) {
 	single.worker.data <- 2
 	single.worker.data <- 3
 	single.worker.data <- 4
+	single.worker.data <- 5
 	demo.succ = true
-	single.ExecuteAndWaitWhenEmpty()
-	single.ExecuteAndWaitWhenEmpty()
-	single.ExecuteAndWaitWhenEmpty()
+	single.ExecuteOrWait()
+	single.ExecuteOrWait()
+	single.ExecuteOrWait()
 	demo.succ = false
-	single.ExecuteAndWaitWhenEmpty()
+	single.ExecuteOrWait()
+	single.ExecuteOrReturn()
+	single.ExecuteOrReturn()
+	single.ExecuteOrReturn()
 
 	assert.Equal(t, int64(3), single.worker.Statistics.ExecuteSuccCount)
-	assert.Equal(t, int64(1), single.worker.Statistics.ExecuteFailCount)
+	assert.Equal(t, int64(2), single.worker.Statistics.ExecuteFailCount)
 }

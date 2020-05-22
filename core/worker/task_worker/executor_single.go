@@ -28,7 +28,17 @@ func (m *SingleExecutor) execute(item interface{}) {
 	cost = int64(time.Now().Sub(t0) / time.Millisecond)
 }
 
-func (m *SingleExecutor) ExecuteAndWaitWhenEmpty() {
+func (m *SingleExecutor) ExecuteOrReturn() {
+	select {
+	case item, ok := <-m.worker.data:
+		if ok {
+			m.execute(item)
+		}
+	default:
+	}
+}
+
+func (m *SingleExecutor) ExecuteOrWait() {
 	item, ok := <-m.worker.data
 	if ok {
 		m.execute(item)

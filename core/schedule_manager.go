@@ -57,6 +57,14 @@ func (s *ScheduleManager) NeedStop() bool {
 	return s.needStop
 }
 
+func (s *ScheduleManager) Store() store.Store {
+	return s.store
+}
+
+func (s *ScheduleManager) Scheduler() definition.Scheduler {
+	return *s.scheduler
+}
+
 func (s *ScheduleManager) Start() {
 	s.Lock()
 	defer s.Unlock()
@@ -96,6 +104,6 @@ func (s *ScheduleManager) Shutdown() {
 	}
 	timeout.Stop()
 
-	s.store.UnregisterScheduler(s.scheduler.Id)
+	s.cleanScheduler(s.scheduler.Id)
 	s.store.Close()
 }

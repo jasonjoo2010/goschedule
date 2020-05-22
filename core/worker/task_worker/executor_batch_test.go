@@ -1,6 +1,7 @@
 package task_worker
 
 import (
+	"sync"
 	"testing"
 	"time"
 
@@ -22,8 +23,8 @@ func (demo *demoTaskBatch) Execute(task []interface{}, ownSign string) bool {
 }
 
 func TestExecutorBatch(t *testing.T) {
-	demo := &demoTaskSingle{}
-	single := SingleExecutor{
+	demo := &demoTaskBatch{}
+	single := BatchExecutor{
 		worker: &TaskWorker{
 			data: make(chan interface{}, 100),
 			taskDefine: definition.Task{
@@ -31,6 +32,11 @@ func TestExecutorBatch(t *testing.T) {
 			},
 		},
 		task: demo,
+		pool: sync.Pool{
+			New: func() interface{} {
+				return make([]interface{}, 0, 6)
+			},
+		},
 	}
 	single.worker.data <- 1
 	single.worker.data <- 2
@@ -43,9 +49,12 @@ func TestExecutorBatch(t *testing.T) {
 	single.worker.data <- 9
 	single.worker.data <- 10
 	demo.succ = true
-	single.ExecuteAndWaitWhenEmpty()
+	single.ExecuteOrWait()
 	demo.succ = false
-	single.ExecuteAndWaitWhenEmpty()
+	single.ExecuteOrReturn()
+	single.ExecuteOrReturn()
+	single.ExecuteOrReturn()
+	single.ExecuteOrReturn()
 
 	assert.Equal(t, int64(1), single.worker.Statistics.ExecuteSuccCount)
 	assert.Equal(t, int64(1), single.worker.Statistics.ExecuteFailCount)

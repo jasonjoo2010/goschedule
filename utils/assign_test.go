@@ -102,3 +102,48 @@ func TestSortSchedulers(t *testing.T) {
 	assert.Equal(t, "a$b$3$000009", schedulers[0].Id)
 	assert.Equal(t, "b$b$3$00000013", schedulers[3].Id)
 }
+
+func TestContainsTaskItem(t *testing.T) {
+	arr := make([]definition.TaskItem, 0, 10)
+	arr = append(arr, definition.TaskItem{
+		Id: "item0",
+	}, definition.TaskItem{
+		Id: "item1",
+	}, definition.TaskItem{
+		Id: "item2",
+	}, definition.TaskItem{
+		Id: "item3",
+	}, definition.TaskItem{
+		Id: "item4",
+	})
+
+	assert.True(t, ContainsTaskItem(arr, "item0"))
+	assert.True(t, ContainsTaskItem(arr, "item1"))
+	assert.True(t, ContainsTaskItem(arr, "item2"))
+	assert.True(t, ContainsTaskItem(arr, "item4"))
+	assert.False(t, ContainsTaskItem(arr, "item5"))
+}
+
+func TestRemoveTaskItem(t *testing.T) {
+	arr := make([]definition.TaskItem, 0, 10)
+	arr = append(arr, definition.TaskItem{
+		Id: "item0",
+	}, definition.TaskItem{
+		Id: "item1",
+	}, definition.TaskItem{
+		Id: "item2",
+	}, definition.TaskItem{
+		Id: "item3",
+	}, definition.TaskItem{
+		Id: "item4",
+	})
+
+	arr = RemoveTaskItem(arr, "item0")
+	assert.Equal(t, 4, len(arr))
+
+	arr = RemoveTaskItem(arr, "item2")
+	assert.Equal(t, 3, len(arr))
+
+	arr = RemoveTaskItem(arr, "item4")
+	assert.Equal(t, 2, len(arr))
+}
