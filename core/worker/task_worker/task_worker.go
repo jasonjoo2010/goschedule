@@ -291,6 +291,8 @@ func (w *TaskWorker) selectOnce() {
 		w.inCron = false
 		if w.intervalNoData > 0 {
 			utils.Delay(w, w.intervalNoData)
+		} else if w.interval > 0 {
+			utils.Delay(w, w.interval)
 		}
 		return
 	}
