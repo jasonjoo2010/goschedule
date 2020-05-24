@@ -7,9 +7,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/jasonjoo2010/goschedule/core"
 	"github.com/jasonjoo2010/goschedule/core/definition"
 	"github.com/jasonjoo2010/goschedule/core/worker"
+	"github.com/jasonjoo2010/goschedule/store"
 	"github.com/jasonjoo2010/goschedule/utils"
 	"github.com/robfig/cron/v3"
 	"github.com/sirupsen/logrus"
@@ -58,7 +58,7 @@ type TaskWorker struct {
 	taskDefine     definition.Task
 	taskItems      []definition.TaskItem
 	noItemsCycles  int
-	manager        *core.ScheduleManager
+	store          store.Store
 	runtime        definition.TaskRuntime
 	notifier       chan int
 	data           chan interface{}
@@ -133,14 +133,14 @@ func RegisterTaskInstName(name string, task TaskBase) {
 
 // NewTask creates a new task and initials necessary fields
 //	Please don't initial TaskWorker manually
-func NewTask(strategy definition.Strategy, task definition.Task, single bool, manager *core.ScheduleManager) (worker.Worker, error) {
+func NewTask(strategy definition.Strategy, task definition.Task, store store.Store, schedulerId string) (worker.Worker, error) {
 	var inst TaskBase
-	sequence, err := manager.Store().Sequence()
+	sequence, err := store.Sequence()
 	if err != nil {
 		logrus.Error("Generate sequence from storage failed: ", err.Error())
 		return nil, errors.New("Generate sequence from storage failed: " + err.Error())
 	}
-	if single {
+	if task.SingleInstance {
 		inst = GetTaskInst(task.Bind)
 		if inst == nil {
 			logrus.Warn("Fetch task worker instance failed for ", task.Bind)
@@ -169,7 +169,7 @@ func NewTask(strategy definition.Strategy, task definition.Task, single bool, ma
 		taskDefine:      task,
 		taskItems:       make([]definition.TaskItem, 0),
 		parameter:       task.Parameter,
-		manager:         manager,
+		store:           store,
 		runtime: definition.TaskRuntime{
 			Id:            utils.GenerateUUID(sequence),
 			Version:       1,
@@ -178,7 +178,7 @@ func NewTask(strategy definition.Strategy, task definition.Task, single bool, ma
 			Hostname:      utils.GetHostName(),
 			Ip:            utils.GetHostIPv4(),
 			ExecutorCount: task.ExecutorCount,
-			SchedulerId:   manager.Scheduler().Id,
+			SchedulerId:   schedulerId,
 			StrategyId:    strategy.Id,
 			OwnSign:       utils.OwnSign(strategy.Id),
 			TaskId:        task.Id,
@@ -260,7 +260,7 @@ func (w *TaskWorker) selectOnce() {
 			logrus.Error("Selecting error: ", r)
 		}
 	}()
-	if w.manager.Store().ShouldTaskReloadItems(w.taskDefine.Id, w.runtime.Id) {
+	if w.store.ShouldTaskReloadItems(w.taskDefine.Id, w.runtime.Id) {
 		// make sure no queued items
 		maxWait := time.Millisecond * 500
 		for len(w.data) > 0 && maxWait > 0 {

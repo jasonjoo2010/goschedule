@@ -6,6 +6,7 @@ import (
 
 	"github.com/jasonjoo2010/goschedule/core/definition"
 	"github.com/jasonjoo2010/goschedule/core/worker"
+	"github.com/jasonjoo2010/goschedule/core/worker/task_worker"
 	"github.com/jasonjoo2010/goschedule/store"
 	"github.com/jasonjoo2010/goschedule/utils"
 	"github.com/sirupsen/logrus"
@@ -123,6 +124,12 @@ func (s *ScheduleManager) createWorker(strategy *definition.Strategy) (worker.Wo
 		return worker.NewSimple(*strategy)
 	case definition.FuncKind:
 		return worker.NewFunc(*strategy)
+	case definition.TaskKind:
+		task, err := s.store.GetTask(strategy.Bind)
+		if err != nil {
+			return nil, err
+		}
+		return task_worker.NewTask(*strategy, *task, s.store, s.scheduler.Id)
 	default:
 		logrus.Error("Unknow Kind of strategy: ", strategy.Kind)
 		return nil, errors.New("Unknow strategy kind")

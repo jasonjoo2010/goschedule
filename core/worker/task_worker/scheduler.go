@@ -21,7 +21,7 @@ func (r *runtimeAssign) String() string {
 
 func (w *TaskWorker) clearExpiredRuntimes() ([]string, []*definition.TaskRuntime, error) {
 	now := time.Now().Unix() * 1000
-	runtimes, err := w.manager.Store().GetTaskRuntimes(w.taskDefine.Id)
+	runtimes, err := w.store.GetTaskRuntimes(w.taskDefine.Id)
 	if err != nil || len(runtimes) < 1 {
 		return nil, nil, err
 	}
@@ -30,7 +30,7 @@ func (w *TaskWorker) clearExpiredRuntimes() ([]string, []*definition.TaskRuntime
 	for _, r := range runtimes {
 		// expired?
 		if now-r.LastHeartBeat > int64(w.taskDefine.DeathTimeout) {
-			w.manager.Store().RemoveTaskRuntime(w.runtime.TaskId, r.Id)
+			w.store.RemoveTaskRuntime(w.runtime.TaskId, r.Id)
 			logrus.Warn("Clean expired task runtime: ", r.Id)
 			continue
 		}
@@ -41,8 +41,8 @@ func (w *TaskWorker) clearExpiredRuntimes() ([]string, []*definition.TaskRuntime
 }
 
 func (w *TaskWorker) getCurrentAssignments() (map[string]*definition.TaskAssignment, []*definition.TaskAssignment, []*runtimeAssign, error) {
-	assignments, err1 := w.manager.Store().GetTaskAssignments(w.taskDefine.Id)
-	runtimes, err2 := w.manager.Store().GetTaskRuntimes(w.taskDefine.Id)
+	assignments, err1 := w.store.GetTaskAssignments(w.taskDefine.Id)
+	runtimes, err2 := w.store.GetTaskRuntimes(w.taskDefine.Id)
 	if err1 != nil || err2 != nil {
 		if err1 != nil {
 			logrus.Error("Fetch assignments of task error: ", err1.Error())
@@ -90,7 +90,7 @@ func (w *TaskWorker) getCurrentAssignments() (map[string]*definition.TaskAssignm
 				Paramenter: t.Parameter,
 			}
 			spareAssignments = append(spareAssignments, assign)
-			w.manager.Store().SetTaskAssignment(assign)
+			w.store.SetTaskAssignment(assign)
 			assignMap[t.Id] = assign
 		}
 	}
@@ -162,13 +162,13 @@ func (w *TaskWorker) distributeTaskItems() {
 					item.RequestedRuntimeId = cur.RuntimeId
 					changedRuntimes = append(changedRuntimes, item.RuntimeId)
 				}
-				w.manager.Store().SetTaskAssignment(item)
+				w.store.SetTaskAssignment(item)
 			}
 			logrus.Info("Increase ", target-cnt, " task item(s) to ", cur.RuntimeId)
 		}
 	}
 	for _, rid := range changedRuntimes {
-		w.manager.Store().RequireTaskReloadItems(w.taskDefine.Id, rid)
+		w.store.RequireTaskReloadItems(w.taskDefine.Id, rid)
 	}
 	// TODO verify whether there may be consistence problem between reload flags and actual data
 }
@@ -176,7 +176,7 @@ func (w *TaskWorker) distributeTaskItems() {
 // assignTaskItems reloads task items and release items others requests
 //	When call this PLEASE make sure that you have NO queued data in channel
 func (w *TaskWorker) reloadTaskItems() {
-	assignments, err := w.manager.Store().GetTaskAssignments(w.taskDefine.Id)
+	assignments, err := w.store.GetTaskAssignments(w.taskDefine.Id)
 	if err != nil {
 		logrus.Error("Fetch assignments error: ", err.Error())
 		return
@@ -196,8 +196,8 @@ func (w *TaskWorker) reloadTaskItems() {
 			w.taskItems = utils.RemoveTaskItem(w.taskItems, assignment.ItemId)
 			assignment.RuntimeId = assignment.RequestedRuntimeId
 			assignment.RequestedRuntimeId = ""
-			w.manager.Store().SetTaskAssignment(assignment)
-			w.manager.Store().RequireTaskReloadItems(w.taskDefine.Id, assignment.RuntimeId)
+			w.store.SetTaskAssignment(assignment)
+			w.store.RequireTaskReloadItems(w.taskDefine.Id, assignment.RuntimeId)
 			logrus.Info("Release task item [", assignment.ItemId, "] for ", assignment.TaskId)
 			removedItems++
 			continue
@@ -211,7 +211,7 @@ func (w *TaskWorker) reloadTaskItems() {
 			newItems++
 		}
 	}
-	w.manager.Store().ClearTaskReloadItems(w.taskDefine.Id, w.runtime.Id)
+	w.store.ClearTaskReloadItems(w.taskDefine.Id, w.runtime.Id)
 	logrus.Info("Reload task items, ", newItems, " items added, ", removedItems, " items released")
 }
 
@@ -222,7 +222,7 @@ func (w *TaskWorker) schedule() {
 		w.distributeTaskItems()
 		utils.Delay(w, 60*time.Millisecond)
 	}
-	assignments, err := w.manager.Store().GetTaskAssignments(w.taskDefine.Id)
+	assignments, err := w.store.GetTaskAssignments(w.taskDefine.Id)
 	if err != nil {
 		logrus.Warn("Fetch assignments failed: ", err.Error())
 		return
@@ -230,7 +230,7 @@ func (w *TaskWorker) schedule() {
 	for _, assignment := range assignments {
 		if assignment.RuntimeId == w.runtime.Id {
 			assignment.RuntimeId = ""
-			w.manager.Store().SetTaskAssignment(assignment)
+			w.store.SetTaskAssignment(assignment)
 		}
 	}
 }

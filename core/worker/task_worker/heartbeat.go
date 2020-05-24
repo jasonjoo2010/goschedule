@@ -10,7 +10,7 @@ func (w *TaskWorker) registerTaskRuntime() {
 	now := time.Now().Unix() * 1000
 	w.runtime.LastHeartBeat = now
 	w.runtime.Version++
-	w.manager.Store().SetTaskRuntime(&w.runtime)
+	w.store.SetTaskRuntime(&w.runtime)
 }
 
 func (w *TaskWorker) heartbeat() {
@@ -20,5 +20,5 @@ func (w *TaskWorker) heartbeat() {
 		w.registerTaskRuntime()
 		utils.Delay(w, time.Duration(w.taskDefine.HeartbeatInterval)*time.Millisecond)
 	}
-	w.manager.Store().RemoveTaskRuntime(w.runtime.TaskId, w.runtime.Id)
+	w.store.RemoveTaskRuntime(w.runtime.TaskId, w.runtime.Id)
 }

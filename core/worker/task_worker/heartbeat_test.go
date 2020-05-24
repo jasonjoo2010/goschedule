@@ -18,7 +18,7 @@ const (
 )
 
 var (
-	store = memory.New()
+	memoryStore = memory.New()
 )
 
 type DemoHeartbeatTask struct {
@@ -38,7 +38,7 @@ func (d *DemoHeartbeatTask) Execute(task interface{}, ownSign string) bool {
 
 func newTaskWorker() *TaskWorker {
 	RegisterTaskTypeName("demoHeartbeat", &DemoHeartbeatTask{})
-	manager, _ := core.New(store)
+	manager, _ := core.New(memoryStore)
 	item1 := &definition.TaskItem{
 		Id: TEST_ITEM_ID1,
 	}
@@ -63,32 +63,32 @@ func newTaskWorker() *TaskWorker {
 			item1,
 			item2,
 		},
-	}, false, manager)
+	}, memoryStore, manager.Scheduler().Id)
 	return w.(*TaskWorker)
 }
 
 func clearStore() {
-	runtimes, _ := store.GetTaskRuntimes(TEST_TASK_ID)
+	runtimes, _ := memoryStore.GetTaskRuntimes(TEST_TASK_ID)
 	for _, r := range runtimes {
-		store.RemoveTaskRuntime(r.TaskId, r.Id)
+		memoryStore.RemoveTaskRuntime(r.TaskId, r.Id)
 	}
 
-	assignments, _ := store.GetTaskAssignments(TEST_TASK_ID)
+	assignments, _ := memoryStore.GetTaskAssignments(TEST_TASK_ID)
 	for _, t := range assignments {
-		store.RemoveTaskAssignment(t.TaskId, t.ItemId)
+		memoryStore.RemoveTaskAssignment(t.TaskId, t.ItemId)
 	}
 }
 
 func TestRegisterTaskRuntime(t *testing.T) {
 	clearStore()
 	w := newTaskWorker()
-	runtimes1, _ := store.GetTaskRuntimes(TEST_TASK_ID)
+	runtimes1, _ := memoryStore.GetTaskRuntimes(TEST_TASK_ID)
 	w.registerTaskRuntime()
-	runtimes2, _ := store.GetTaskRuntimes(TEST_TASK_ID)
+	runtimes2, _ := memoryStore.GetTaskRuntimes(TEST_TASK_ID)
 	assert.Equal(t, 1, len(runtimes2)-len(runtimes1))
 	ver1 := runtimes2[len(runtimes2)-1].Version
 	w.registerTaskRuntime()
-	runtimes3, _ := store.GetTaskRuntimes(TEST_TASK_ID)
+	runtimes3, _ := memoryStore.GetTaskRuntimes(TEST_TASK_ID)
 	ver2 := runtimes3[len(runtimes3)-1].Version
 	assert.Equal(t, len(runtimes2), len(runtimes3))
 	assert.Equal(t, int64(1), ver2-ver1)
@@ -99,7 +99,7 @@ func TestHeartBeat(t *testing.T) {
 	w := newTaskWorker()
 	go w.heartbeat()
 	time.Sleep(500 * time.Millisecond)
-	runtimes1, _ := store.GetTaskRuntimes(TEST_TASK_ID)
+	runtimes1, _ := memoryStore.GetTaskRuntimes(TEST_TASK_ID)
 	assert.True(t, len(runtimes1) > 0)
 	w.needStop = true
 	select {
