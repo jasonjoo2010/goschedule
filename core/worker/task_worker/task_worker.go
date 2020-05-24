@@ -57,6 +57,7 @@ type TaskWorker struct {
 	strategyDefine definition.Strategy
 	taskDefine     definition.Task
 	taskItems      []definition.TaskItem
+	noItemsCycles  int
 	manager        *core.ScheduleManager
 	runtime        definition.TaskRuntime
 	notifier       chan int
@@ -272,6 +273,17 @@ func (w *TaskWorker) selectOnce() {
 		}
 		w.reloadTaskItems()
 	}
+	// Check available task item
+	if len(w.taskItems) < 1 {
+		w.noItemsCycles++
+		if w.noItemsCycles >= 10 {
+			logrus.Warn("Cannot get any task item after quite a long time.")
+			w.noItemsCycles = 0
+		}
+		utils.Delay(w, time.Duration(w.taskDefine.HeartbeatInterval)*time.Millisecond)
+		return
+	}
+	w.noItemsCycles = 0
 	arr := w.task.Select(w.parameter, w.ownSign, w.taskItems, w.taskDefine.FetchCount)
 	arr_size := len(arr)
 	w.Statistics.Select(int64(arr_size))

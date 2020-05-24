@@ -20,6 +20,7 @@ func TestGeneral(t *testing.T) {
 
 func TestSelectOnce(t *testing.T) {
 	w := newTaskWorker()
+	store.RequireTaskReloadItems(w.taskDefine.Id, w.runtime.Id)
 	assert.Equal(t, 0, len(w.data))
 	w.selectOnce()
 	assert.Equal(t, 3, len(w.data))
