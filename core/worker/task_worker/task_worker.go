@@ -228,6 +228,7 @@ func (w *TaskWorker) NeedStop() bool {
 	return w.needStop
 }
 
+// shouldRun returns false when it cannot decide the result
 func (w *TaskWorker) shouldRun() bool {
 	if w.schedStart == nil {
 		// no cron settings
@@ -260,8 +261,14 @@ func (w *TaskWorker) selectOnce() {
 	}()
 	if w.manager.Store().ShouldTaskReloadItems(w.taskDefine.Id, w.runtime.Id) {
 		// make sure no queued items
-		for len(w.data) > 0 {
-			time.Sleep(100 * time.Millisecond)
+		maxWait := time.Millisecond * 500
+		for len(w.data) > 0 && maxWait > 0 {
+			time.Sleep(10 * time.Millisecond)
+			maxWait -= 10 * time.Millisecond
+		}
+		if len(w.data) > 0 {
+			logrus.Info("Queue is not empty and wait to reload next time")
+			return
 		}
 		w.reloadTaskItems()
 	}
@@ -316,8 +323,6 @@ func (w *TaskWorker) loopMain() {
 			time.Sleep(10 * time.Millisecond)
 		}
 		w.notifier <- 1
-		w.started = false
-		w.needStop = false
 	}()
 	// create other executors
 	for i := 1; i < w.taskDefine.ExecutorCount; i++ {
@@ -378,5 +383,7 @@ LOOP:
 			break LOOP
 		}
 	}
+	w.started = false
+	w.needStop = false
 	logrus.Error("Worker of strategy ", strategyId, " stopped")
 }

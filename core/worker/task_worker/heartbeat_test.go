@@ -26,11 +26,13 @@ type DemoHeartbeatTask struct {
 
 func (d *DemoHeartbeatTask) Select(parameter, ownSign string, items []definition.TaskItem, eachFetchNum int) []interface{} {
 	fmt.Println("sel()")
+	time.Sleep(20 * time.Millisecond)
 	return []interface{}{1, 2, 3}
 }
 
 func (d *DemoHeartbeatTask) Execute(task interface{}, ownSign string) bool {
 	fmt.Println("exe()")
+	time.Sleep(20 * time.Millisecond)
 	return true
 }
 

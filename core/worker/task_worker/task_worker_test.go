@@ -3,25 +3,26 @@ package task_worker
 import (
 	"reflect"
 	"testing"
+	"time"
 
-	"github.com/jasonjoo2010/goschedule/core"
-	"github.com/jasonjoo2010/goschedule/core/definition"
-	"github.com/jasonjoo2010/goschedule/store/memory"
 	"github.com/jasonjoo2010/goschedule/utils"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestTaskWorker(t *testing.T) {
-	store := memory.New()
-	manager, _ := core.New(store)
-	strategy := definition.Strategy{}
-	task := definition.Task{}
-	worker, _ := NewTask(strategy, task, false, manager)
-	assert.NotNil(t, worker)
+func TestGeneral(t *testing.T) {
+	w := newTaskWorker()
+	w.Start("s0", "")
+	time.Sleep(100 * time.Millisecond)
+	assert.True(t, w.started)
+	w.Stop("s0", "")
+	assert.False(t, w.started)
+}
 
-	worker.Start("s0", "")
-
-	worker.Stop("s0", "")
+func TestSelectOnce(t *testing.T) {
+	w := newTaskWorker()
+	assert.Equal(t, 0, len(w.data))
+	w.selectOnce()
+	assert.Equal(t, 3, len(w.data))
 }
 
 func TestRegister(t *testing.T) {
