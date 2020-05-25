@@ -84,11 +84,11 @@ func DoTestTask(t *testing.T, s store.Store) {
 	assert.Equal(t, 44, task.ExecutorCount)
 
 	// delete
-	err = s.DeleteTask(taskOri.Id)
+	err = s.RemoveTask(taskOri.Id)
 	assert.Nil(t, err)
 
 	// re-delete
-	err = s.DeleteTask(taskOri.Id)
+	err = s.RemoveTask(taskOri.Id)
 	assert.Equal(t, store.NotExist, err)
 
 	// verify delete
@@ -148,11 +148,11 @@ func DoTestStrategy(t *testing.T, s store.Store) {
 	assert.Equal(t, 44, strategy.Total)
 
 	// delete
-	err = s.DeleteStrategy(strategyOri.Id)
+	err = s.RemoveStrategy(strategyOri.Id)
 	assert.Nil(t, err)
 
 	// re-delete
-	err = s.DeleteStrategy(strategyOri.Id)
+	err = s.RemoveStrategy(strategyOri.Id)
 	assert.Equal(t, store.NotExist, err)
 
 	// verify delete
@@ -500,6 +500,6 @@ func DoTestDump(t *testing.T, s store.Store) {
 	assert.Contains(t, str, "93944")
 
 	s.RemoveStrategyRuntime(runtime.StrategyId, runtime.SchedulerId)
-	s.DeleteStrategy(strategy.Id)
+	s.RemoveStrategy(strategy.Id)
 	s.UnregisterScheduler(scheduler.Id)
 }

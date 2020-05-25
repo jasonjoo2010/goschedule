@@ -122,7 +122,7 @@ func (s *MemoryStore) UpdateTask(task *definition.Task) error {
 	return nil
 }
 
-func (s *MemoryStore) DeleteTask(id string) error {
+func (s *MemoryStore) RemoveTask(id string) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	if _, ok := s.tasks[id]; !ok {
@@ -289,7 +289,7 @@ func (s *MemoryStore) UpdateStrategy(strategy *definition.Strategy) error {
 	return nil
 }
 
-func (s *MemoryStore) DeleteStrategy(id string) error {
+func (s *MemoryStore) RemoveStrategy(id string) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	if _, ok := s.strategies[id]; !ok {

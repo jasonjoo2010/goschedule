@@ -288,7 +288,7 @@ func (s *RedisStore) UpdateTask(task *definition.Task) error {
 	return err
 }
 
-func (s *RedisStore) DeleteTask(id string) error {
+func (s *RedisStore) RemoveTask(id string) error {
 	cnt, err := s.client.HDel(s.keyTasks(), id).Result()
 	if cnt == 0 {
 		return store.NotExist
@@ -459,7 +459,7 @@ func (s *RedisStore) UpdateStrategy(strategy *definition.Strategy) error {
 	return err
 }
 
-func (s *RedisStore) DeleteStrategy(id string) error {
+func (s *RedisStore) RemoveStrategy(id string) error {
 	cnt, err := s.client.HDel(s.keyStrategies(), id).Result()
 	if cnt == 0 {
 		return store.NotExist

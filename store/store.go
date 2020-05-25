@@ -51,7 +51,7 @@ type Store interface {
 	GetTasks() ([]*definition.Task, error)
 	CreateTask(task *definition.Task) error
 	UpdateTask(task *definition.Task) error
-	DeleteTask(id string) error
+	RemoveTask(id string) error
 
 	// task runtimes
 	GetTaskRuntime(taskId, id string) (*definition.TaskRuntime, error)
@@ -73,7 +73,7 @@ type Store interface {
 	GetStrategies() ([]*definition.Strategy, error)
 	CreateStrategy(strategy *definition.Strategy) error
 	UpdateStrategy(strategy *definition.Strategy) error
-	DeleteStrategy(id string) error
+	RemoveStrategy(id string) error
 
 	// strategy runtimes
 	GetStrategyRuntime(strategyId, schedulerId string) (*definition.StrategyRuntime, error)
