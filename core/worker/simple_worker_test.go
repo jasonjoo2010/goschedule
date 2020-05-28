@@ -37,10 +37,9 @@ func TestSimpleWorker(t *testing.T) {
 
 func TestSimpleWorkerInst(t *testing.T) {
 	strategy := definition.Strategy{
-		Id:             "s0",
-		Kind:           definition.FuncKind,
-		Bind:           "demotestsingle",
-		SingleInstance: true,
+		Id:   "s0",
+		Kind: definition.FuncKind,
+		Bind: "demotestsingle",
 		Extra: map[string]string{
 			"Interval": "1000",
 		},

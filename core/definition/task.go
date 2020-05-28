@@ -43,7 +43,6 @@ type Task struct {
 	Model          Model
 	Parameter      string // Parameter of task
 	Bind           string // Binded to registry
-	SingleInstance bool   // Whether it's single instanced
 	Items          []*TaskItem
 	MaxTaskItems   int // max task items per Worker
 
