@@ -22,6 +22,7 @@ var (
 )
 
 type DemoHeartbeatTask struct {
+	Name string
 }
 
 func (d *DemoHeartbeatTask) Select(parameter, ownSign string, items []definition.TaskItem, eachFetchNum int) []interface{} {

@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jasonjoo2010/goschedule/core/definition"
 	"github.com/jasonjoo2010/goschedule/utils"
 	"github.com/stretchr/testify/assert"
 )
@@ -29,14 +30,25 @@ func TestSelectOnce(t *testing.T) {
 func TestRegister(t *testing.T) {
 	RegisterTaskType(&DemoHeartbeatTask{})
 	RegisterTaskType(&DemoHeartbeatTask{})
-	assert.NotNil(t, GetTaskType(utils.TypeName(&DemoHeartbeatTask{})))
+	assert.NotNil(t, getTask(utils.TypeName(DemoHeartbeatTask{})))
 	RegisterTaskTypeName("a", &DemoHeartbeatTask{})
-	assert.NotEqual(t, reflect.TypeOf(DemoHeartbeatTask{}), GetTaskType("a"))
-	assert.Equal(t, reflect.TypeOf(&DemoHeartbeatTask{}), GetTaskType("a"))
+	assert.Equal(t, reflect.TypeOf(&DemoHeartbeatTask{}), reflect.TypeOf(getTask("a")))
 
-	inst := &DemoHeartbeatTask{}
+	heartbeatTask := getTask("a")
+	assert.NotNil(t, heartbeatTask)
+	assert.Equal(t, 3, len(heartbeatTask.Select("asdf", "", []definition.TaskItem{}, 10)))
+
+	inst := &DemoHeartbeatTask{
+		Name: "i0",
+	}
 	RegisterTaskInst(inst)
 	RegisterTaskInstName("b", inst)
-	assert.Equal(t, inst, GetTaskInst(utils.TypeName(inst)))
-	assert.Equal(t, inst, GetTaskInst("b"))
+	assert.Equal(t, inst, getTask(utils.TypeName(inst)))
+	assert.Equal(t, inst, getTask("b"))
+
+	var demoTask *DemoHeartbeatTask
+	var ok bool
+	demoTask, ok = getTask("b").(*DemoHeartbeatTask)
+	assert.True(t, ok)
+	assert.Equal(t, "i0", demoTask.Name)
 }

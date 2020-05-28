@@ -19,29 +19,34 @@ var (
 	registryMap sync.Map
 )
 
-func GetInst(name string) Worker {
-	if v, ok := registryMap.Load(name); ok {
-		t, ok := v.(Worker)
-		if ok {
-			return t
-		}
-		logrus.Warn("Instance registered for key: ", name, " is not in correct type")
-		return nil
+func getWorkerFromType(t reflect.Type) Worker {
+	if v, ok := reflect.New(t).Interface().(Worker); ok {
+		return v
 	}
-	logrus.Warn("No instance registered for key: ", name)
+	logrus.Warn("Entry registered is not a convertable type: ", t)
 	return nil
 }
 
-func GetType(name string) reflect.Type {
-	if v, ok := registryMap.Load(name); ok {
-		t, ok := v.(reflect.Type)
-		if ok {
-			return t
-		}
-		logrus.Warn("Type registered for key: ", name, " is not a reflect.Type")
+func GetWorker(name string) Worker {
+	var (
+		ok bool
+		v  interface{}
+		t  reflect.Type
+		w  Worker
+	)
+	if v, ok = registryMap.Load(name); !ok {
+		logrus.Warn("No type registered for key: ", name)
 		return nil
 	}
-	logrus.Warn("No type registered for key: ", name)
+	t, ok = v.(reflect.Type)
+	if ok {
+		return getWorkerFromType(t)
+	}
+	w, ok = v.(Worker)
+	if ok {
+		return w
+	}
+	logrus.Warn("Type registered for key: ", name, " is not either a type nor inst")
 	return nil
 }
 
@@ -60,12 +65,21 @@ func GetFunc(name string) FuncInterface {
 
 // Register registers specific type with its full package path as key
 func Register(worker Worker) {
-	RegisterName(utils.TypeName(worker), worker)
+	if worker == nil {
+		panic("Could not register a worker type using nil as value")
+	}
+	RegisterName(utils.TypeName(utils.Dereference(worker)), worker)
 }
 
 // RegisterName registers specific type with specific name as key
 func RegisterName(name string, worker Worker) {
-	t := reflect.TypeOf(worker)
+	if name == "" {
+		panic("Could not register a worker type without name")
+	}
+	if worker == nil {
+		panic("Could not register a worker type using nil as value")
+	}
+	t := reflect.TypeOf(utils.Dereference(worker))
 	registryMap.Store(name, t)
 	logrus.Info("Register new worker type: ", name)
 }

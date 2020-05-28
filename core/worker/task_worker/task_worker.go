@@ -82,40 +82,52 @@ type TaskWorker struct {
 	TimeoutShutdown time.Duration
 }
 
-func GetTaskType(name string) reflect.Type {
-	if v, ok := taskRegistryMap.Load(name); ok {
-		t, ok := v.(reflect.Type)
-		if ok {
-			return t
-		}
-		logrus.Warn("Task type registered for key: ", name, " is not a reflect.Type")
-		return nil
+func getTaskFromType(t reflect.Type) TaskBase {
+	if v, ok := reflect.New(t).Interface().(TaskBase); ok {
+		return v
 	}
-	logrus.Warn("No task type registered for key: ", name)
+	logrus.Warn("Entry registered is not a convertable type: ", t)
 	return nil
 }
 
-func GetTaskInst(name string) TaskBase {
-	if v, ok := taskRegistryMap.Load(name); ok {
-		t, ok := v.(TaskBase)
-		if ok {
-			return t
-		}
-		logrus.Warn("Task instance registered for key: ", name, " is not in correct type")
+func getTask(name string) TaskBase {
+	var (
+		ok bool
+		v  interface{}
+	)
+	if v, ok = taskRegistryMap.Load(name); !ok {
+		logrus.Warn("No task type or inst registered for key: ", name)
 		return nil
 	}
-	logrus.Warn("No task instance registered for key: ", name)
+	t, ok := v.(reflect.Type)
+	if ok {
+		return getTaskFromType(t)
+	}
+	val, ok := v.(TaskBase)
+	if ok {
+		return val
+	}
+	logrus.Warn("Entry registered for key: ", name, " is not either a type nor inst")
 	return nil
 }
 
 // RegisterTaskType registers a task type with key inferred by its type
 func RegisterTaskType(task TaskBase) {
-	RegisterTaskTypeName(utils.TypeName(task), task)
+	if task == nil {
+		panic("Could not register a task using nil as value")
+	}
+	RegisterTaskTypeName(utils.TypeName(utils.Dereference(task)), task)
 }
 
 // RegisterTaskTypeName registers a task type with key
 func RegisterTaskTypeName(name string, task TaskBase) {
-	t := reflect.TypeOf(task)
+	if name == "" {
+		panic("Could not register a task using empty name")
+	}
+	if task == nil {
+		panic("Could not register a task using nil as value")
+	}
+	t := reflect.TypeOf(utils.Dereference(task))
 	taskRegistryMap.Store(name, t)
 	logrus.Info("Register new task type: ", name)
 }
@@ -140,26 +152,12 @@ func NewTask(strategy definition.Strategy, task definition.Task, store store.Sto
 		logrus.Error("Generate sequence from storage failed: ", err.Error())
 		return nil, errors.New("Generate sequence from storage failed: " + err.Error())
 	}
-	if task.SingleInstance {
-		inst = GetTaskInst(task.Bind)
-		if inst == nil {
-			logrus.Warn("Fetch task worker instance failed for ", task.Bind)
-			return nil, errors.New("No specific task instance found: " + task.Bind)
-		}
-	} else {
-		t := GetTaskType(task.Bind)
-		if t == nil {
-			logrus.Warn("Create task worker failed: ", task.Bind, " cannot be located")
-			return nil, errors.New("No specific task type found: " + task.Bind)
-		}
-		var ok bool
-		inst, ok = reflect.New(t).Elem().Interface().(TaskBase)
-		if !ok {
-			logrus.Warn("Create task worker failed: ", task.Bind, " cannot be converted to TaskBase")
-			return nil, errors.New("Convert to TaskBase failed: " + task.Bind)
-		}
-		logrus.Info("New task instance of task ", task.Id, " created")
+	inst = getTask(task.Bind)
+	if inst == nil {
+		logrus.Warn("Create task worker failed: ", task.Bind)
+		return nil, errors.New("Convert to TaskBase failed: " + task.Bind)
 	}
+	logrus.Info("New task ", task.Id, " created")
 	w := &TaskWorker{
 		notifier:        make(chan int),
 		data:            make(chan interface{}, utils.Max(10, task.FetchCount*2)),

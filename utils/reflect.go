@@ -25,3 +25,11 @@ func TypeName(obj interface{}) string {
 	}
 	return name
 }
+
+// Dereference returns the value relied behind the given pointer
+func Dereference(v interface{}) interface{} {
+	if v == nil {
+		return nil
+	}
+	return reflect.ValueOf(v).Elem().Interface()
+}

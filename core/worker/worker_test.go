@@ -20,14 +20,26 @@ func callback(strategyId, parameter string) {
 }
 
 func TestRegister(t *testing.T) {
+	RegisterName("bbb", &Demo{})
 	Register(&Demo{})
 	Register(&Demo{})
-	assert.NotNil(t, GetType(utils.TypeName(&Demo{})))
+	assert.NotNil(t, GetWorker(utils.TypeName(Demo{})))
 	RegisterName("a", &Demo{})
-	assert.NotEqual(t, reflect.TypeOf(Demo{}), GetType("a"))
-	assert.Equal(t, reflect.TypeOf(&Demo{}), GetType("a"))
+	assert.Equal(t, reflect.TypeOf(Demo{}), GetWorker("a"))
+	assert.NotEqual(t, reflect.TypeOf(&Demo{}), GetWorker("a"))
 
 	RegisterFunc("a", callback)
 	var fn FuncInterface = callback
 	assert.IsType(t, fn, GetFunc("a"))
+
+	demo := &Demo{1, 2}
+	RegisterInst(demo)
+	RegisterInstName("demo", demo)
+	assert.NotNil(t, GetWorker(utils.TypeName(demo)))
+	assert.NotNil(t, GetWorker("demo"))
+
+	newDemo, ok := GetWorker("demo").(*Demo)
+	assert.True(t, ok)
+	assert.Equal(t, 1, newDemo.x)
+	assert.Equal(t, 2, newDemo.y)
 }
