@@ -578,11 +578,15 @@ func (s *RedisStore) GetSchedulers() ([]*definition.Scheduler, error) {
 }
 
 func dumpMap(b *strings.Builder, m map[string]string) {
-	for k, v := range m {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	for _, k := range keys {
 		b.WriteString("\t")
 		b.WriteString(k)
 		b.WriteString(": ")
-		b.WriteString(v)
+		b.WriteString(m[k])
 		b.WriteString("\n")
 	}
 }
