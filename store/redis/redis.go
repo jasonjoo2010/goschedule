@@ -351,12 +351,15 @@ func (s *RedisStore) ShouldTaskReloadItems(taskId, id string) bool {
 
 func (s *RedisStore) RequireTaskReloadItems(taskId, id string) error {
 	key := s.keyTaskRelaod(taskId)
-	return s.client.HSet(key, id, 1).Err()
+	err := s.client.HSet(key, id, 1).Err()
+	// 1 hour to expire without any new change
+	s.client.Expire(key, time.Hour)
+	return err
 }
 
 func (s *RedisStore) ClearTaskReloadItems(taskId, id string) error {
 	key := s.keyTaskRelaod(taskId)
-	return s.client.HSet(key, id, 0).Err()
+	return s.client.HDel(key, id).Err()
 }
 
 //

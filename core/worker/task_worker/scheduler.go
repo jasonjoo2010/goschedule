@@ -217,7 +217,7 @@ func (w *TaskWorker) reloadTaskItems() {
 
 func (w *TaskWorker) schedule() {
 	// stop handler
-	defer func() { w.notifier <- 4 }()
+	defer func() { w.notifierC <- 4 }()
 	for !w.needStop {
 		w.distributeTaskItems()
 		utils.Delay(w, 60*time.Millisecond)

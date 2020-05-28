@@ -20,7 +20,7 @@ func (m *NormalModel) LoopOnce() {
 		defer atomic.AddInt32(&m.waiting, -1)
 		if atomic.AddInt32(&m.waiting, 1) == int32(m.worker.taskDefine.ExecutorCount) {
 			// Only last one can fetch new data
-			m.worker.selectOnce()
+			m.worker.requestSelecting()
 		} else {
 			m.worker.executeOnceOrWait()
 		}

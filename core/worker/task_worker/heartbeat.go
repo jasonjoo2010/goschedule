@@ -15,7 +15,7 @@ func (w *TaskWorker) registerTaskRuntime() {
 
 func (w *TaskWorker) heartbeat() {
 	// stop handler
-	defer func() { w.notifier <- 2 }()
+	defer func() { w.notifierC <- 2 }()
 	for !w.needStop {
 		w.registerTaskRuntime()
 		utils.Delay(w, time.Duration(w.taskDefine.HeartbeatInterval)*time.Millisecond)

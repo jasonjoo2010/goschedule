@@ -104,7 +104,7 @@ func TestHeartBeat(t *testing.T) {
 	assert.True(t, len(runtimes1) > 0)
 	w.needStop = true
 	select {
-	case val := <-w.notifier:
+	case val := <-w.notifierC:
 		assert.Equal(t, 2, val)
 	case <-time.After(500 * time.Millisecond):
 		assert.Fail(t, "Fail to stop")

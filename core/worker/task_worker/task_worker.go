@@ -60,7 +60,8 @@ type TaskWorker struct {
 	noItemsCycles  int
 	store          store.Store
 	runtime        definition.TaskRuntime
-	notifier       chan int
+	selectC        chan int
+	notifierC      chan int
 	data           chan interface{}
 	model          TaskModel
 	executor       TaskExecutor
@@ -159,7 +160,8 @@ func NewTask(strategy definition.Strategy, task definition.Task, store store.Sto
 	}
 	logrus.Info("New task ", task.Id, " created")
 	w := &TaskWorker{
-		notifier:        make(chan int),
+		selectC:         make(chan int),
+		notifierC:       make(chan int),
 		data:            make(chan interface{}, utils.Max(10, task.FetchCount*2)),
 		TimeoutShutdown: 10 * time.Second,
 		task:            inst,
@@ -245,11 +247,7 @@ func (w *TaskWorker) executeOnceOrWait() {
 	w.executor.ExecuteOrWait()
 }
 
-// inner loop, select() -> execute()
 func (w *TaskWorker) selectOnce() {
-	if w.needStop {
-		return
-	}
 	// lock to block other routine from select concurrently (Especially in stream model)
 	w.Lock()
 	defer w.Unlock()
@@ -302,6 +300,42 @@ func (w *TaskWorker) selectOnce() {
 	}
 }
 
+func (w *TaskWorker) selectLoop() {
+	timer := time.NewTimer(time.Second)
+LOOP:
+	for {
+		timer.Reset(time.Second)
+		select {
+		case <-w.selectC:
+			timer.Stop()
+			if w.needStop {
+				break LOOP
+			}
+			w.selectOnce()
+			timer.Reset(time.Second)
+			select {
+			case w.selectC <- 2:
+			case <-timer.C:
+			}
+		case <-timer.C:
+			// next
+			if w.needStop {
+				break LOOP
+			}
+		}
+	}
+	close(w.selectC)
+}
+
+// inner loop, select() -> execute()
+func (w *TaskWorker) requestSelecting() {
+	if w.needStop {
+		return
+	}
+	w.selectC <- 1
+	<-w.selectC
+}
+
 func (w *TaskWorker) loopOther() {
 	atomic.AddInt32(&w.executors, 1)
 	defer atomic.AddInt32(&w.executors, -1)
@@ -334,7 +368,7 @@ func (w *TaskWorker) loopMain() {
 		for w.executors > 0 {
 			time.Sleep(10 * time.Millisecond)
 		}
-		w.notifier <- 1
+		w.notifierC <- 1
 	}()
 	// create other executors
 	for i := 1; i < w.taskDefine.ExecutorCount; i++ {
@@ -371,6 +405,7 @@ func (w *TaskWorker) Start(strategyId, parameter string) {
 	go w.loopMain()
 	go w.heartbeat()
 	go w.schedule()
+	go w.selectLoop()
 }
 
 func (w *TaskWorker) Stop(strategyId, parameter string) {
@@ -382,7 +417,7 @@ func (w *TaskWorker) Stop(strategyId, parameter string) {
 LOOP:
 	for {
 		select {
-		case v := <-w.notifier:
+		case v := <-w.notifierC:
 			mask |= v
 			if mask == 7 {
 				// succ
