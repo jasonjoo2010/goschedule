@@ -57,6 +57,7 @@ type TaskWorker struct {
 	strategyDefine definition.Strategy
 	taskDefine     definition.Task
 	taskItems      []definition.TaskItem
+	configVersion  int64
 	noItemsCycles  int
 	store          store.Store
 	runtime        definition.TaskRuntime
@@ -273,7 +274,8 @@ func (w *TaskWorker) selectOnce() {
 		w.fillOrQueued(arr)
 		return
 	}
-	if w.store.ShouldTaskReloadItems(w.taskDefine.Id, w.runtime.Id) {
+	ver, err := w.store.GetTaskItemsConfigVersion(w.strategyId, w.taskDefine.Id)
+	if err == nil && w.configVersion < ver {
 		// make sure no queued items
 		maxWait := time.Millisecond * 500
 		for len(w.data) > 0 && maxWait > 0 {
@@ -285,6 +287,7 @@ func (w *TaskWorker) selectOnce() {
 			return
 		}
 		w.reloadTaskItems()
+		w.configVersion = ver
 	}
 	// Check available task item
 	if len(w.taskItems) < 1 {
@@ -415,5 +418,5 @@ LOOP:
 	}
 	w.started = false
 	w.needStop = false
-	logrus.Error("Worker of strategy ", strategyId, " stopped")
+	logrus.Info("Worker of strategy ", strategyId, " stopped")
 }

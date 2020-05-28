@@ -19,12 +19,12 @@ type MemoryStore struct {
 	sequence        uint64
 	mutex           *sync.Mutex
 	lock            *distlock.DistLock
+	taskItemsConfig map[string]int64
 	tasks           map[string]*definition.Task
 	strategies      map[string]*definition.Strategy
 	schedulers      map[string]*definition.Scheduler
 	runtimes        map[runtimeKey]*definition.StrategyRuntime
 	taskRuntimes    map[runtimeKey]*definition.TaskRuntime
-	taskReloadFlags map[runtimeKey]bool
 	taskAssignments map[runtimeKey]*definition.TaskAssignment
 }
 
@@ -50,7 +50,7 @@ func New() *MemoryStore {
 		runtimes:        make(map[runtimeKey]*definition.StrategyRuntime),
 		taskRuntimes:    make(map[runtimeKey]*definition.TaskRuntime),
 		taskAssignments: make(map[runtimeKey]*definition.TaskAssignment),
-		taskReloadFlags: make(map[runtimeKey]bool),
+		taskItemsConfig: make(map[string]int64),
 	}
 }
 
@@ -175,26 +175,21 @@ func (s *MemoryStore) RemoveTaskRuntime(taskId, id string) error {
 	return nil
 }
 
-func (s *MemoryStore) ShouldTaskReloadItems(taskId, id string) bool {
+func (s *MemoryStore) GetTaskItemsConfigVersion(strategyId, taskId string) (int64, error) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
-	if val, ok := s.taskReloadFlags[runtimeKey{taskId, id}]; ok {
-		return val
+	key := strategyId + "/" + taskId
+	if val, ok := s.taskItemsConfig[key]; ok {
+		return val, nil
 	}
-	return false
+	return 0, nil
 }
 
-func (s *MemoryStore) RequireTaskReloadItems(taskId, id string) error {
+func (s *MemoryStore) IncreaseTaskItemsConfigVersion(strategyId, taskId string) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
-	s.taskReloadFlags[runtimeKey{taskId, id}] = true
-	return nil
-}
-
-func (s *MemoryStore) ClearTaskReloadItems(taskId, id string) error {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
-	s.taskReloadFlags[runtimeKey{taskId, id}] = false
+	key := strategyId + "/" + taskId
+	s.taskItemsConfig[key]++
 	return nil
 }
 
@@ -412,9 +407,13 @@ func (s *MemoryStore) Dump() string {
 		dumpMap(b, k.String(), v)
 	}
 
-	b.WriteString("\nTaskReloads:\n")
-	for k, v := range s.taskReloadFlags {
-		dumpMap(b, k.String(), v)
+	b.WriteString("\nTaskItemsConfigVersion:\n")
+	for k, v := range s.taskItemsConfig {
+		b.WriteString("\t")
+		b.WriteString(k)
+		b.WriteString(": ")
+		b.WriteString(strconv.FormatInt(v, 10))
+		b.WriteString("\n")
 	}
 
 	b.WriteString("\nTaskAssignments:\n")

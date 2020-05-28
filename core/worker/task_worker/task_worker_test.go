@@ -21,7 +21,7 @@ func TestGeneral(t *testing.T) {
 
 func TestSelectOnce(t *testing.T) {
 	w := newTaskWorker()
-	memoryStore.RequireTaskReloadItems(w.taskDefine.Id, w.runtime.Id)
+	memoryStore.IncreaseTaskItemsConfigVersion(w.strategyId, w.taskDefine.Id)
 	assert.Equal(t, 0, len(w.data))
 	w.selectOnce()
 	assert.Equal(t, 3, len(w.data))
@@ -31,7 +31,7 @@ func TestSelectOnce(t *testing.T) {
 func TestSelectQueued(t *testing.T) {
 	w := newTaskWorker()
 	w.data = make(chan interface{}, 1)
-	memoryStore.RequireTaskReloadItems(w.taskDefine.Id, w.runtime.Id)
+	memoryStore.IncreaseTaskItemsConfigVersion(w.strategyId, w.taskDefine.Id)
 	assert.Equal(t, 0, len(w.data))
 	w.selectOnce()
 	assert.Equal(t, 1, len(w.data))

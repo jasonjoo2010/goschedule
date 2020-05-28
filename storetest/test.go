@@ -460,19 +460,13 @@ func DoTestScheduler(t *testing.T, s store.Store) {
 }
 
 func DoTestTaskReloadItems(t *testing.T, s store.Store) {
-	assert.Nil(t, s.ClearTaskReloadItems("t0", "a0"))
-	assert.Nil(t, s.ClearTaskReloadItems("t0", "a1"))
-	assert.Nil(t, s.ClearTaskReloadItems("t0", "a2"))
-	assert.False(t, s.ShouldTaskReloadItems("t0", "a0"))
-	assert.False(t, s.ShouldTaskReloadItems("t0", "a1"))
-	assert.False(t, s.ShouldTaskReloadItems("t0", "a2"))
-	assert.Nil(t, s.RequireTaskReloadItems("t0", "a1"))
-	assert.Nil(t, s.RequireTaskReloadItems("t0", "a2"))
-	assert.False(t, s.ShouldTaskReloadItems("t0", "a0"))
-	assert.True(t, s.ShouldTaskReloadItems("t0", "a1"))
-	assert.True(t, s.ShouldTaskReloadItems("t0", "a2"))
-	assert.Nil(t, s.ClearTaskReloadItems("t0", "a1"))
-	assert.Nil(t, s.ClearTaskReloadItems("t0", "a2"))
+	ver, err := s.GetTaskItemsConfigVersion("s0", "t0")
+	assert.Nil(t, err)
+	assert.True(t, ver >= 0)
+	assert.Nil(t, s.IncreaseTaskItemsConfigVersion("s0", "t0"))
+	ver1, err := s.GetTaskItemsConfigVersion("s0", "t0")
+	assert.Nil(t, err)
+	assert.True(t, ver1 > ver)
 }
 
 func DoTestDump(t *testing.T, s store.Store) {

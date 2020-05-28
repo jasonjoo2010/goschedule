@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"math"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -58,6 +59,10 @@ func NewFromConfig(config *RedisStoreConfig) *RedisStore {
 	}
 }
 
+func hasError(err error) bool {
+	return err != nil && !strings.Contains(err.Error(), "redis: nil")
+}
+
 func New(prefix, host string, port int) *RedisStore {
 	return NewFromConfig(&RedisStoreConfig{
 		Addrs: []string{
@@ -68,7 +73,7 @@ func New(prefix, host string, port int) *RedisStore {
 }
 
 func parseTask(str string, err error) (*definition.Task, error) {
-	if err != nil && !strings.Contains(err.Error(), "redis: nil") {
+	if hasError(err) {
 		return nil, err
 	}
 	if str == "" {
@@ -83,7 +88,7 @@ func parseTask(str string, err error) (*definition.Task, error) {
 }
 
 func parseStrategy(str string, err error) (*definition.Strategy, error) {
-	if err != nil && !strings.Contains(err.Error(), "redis: nil") {
+	if hasError(err) {
 		return nil, err
 	}
 	if str == "" {
@@ -98,7 +103,7 @@ func parseStrategy(str string, err error) (*definition.Strategy, error) {
 }
 
 func parseRuntime(str string, err error) (*definition.StrategyRuntime, error) {
-	if err != nil && !strings.Contains(err.Error(), "redis: nil") {
+	if hasError(err) {
 		return nil, err
 	}
 	if str == "" {
@@ -113,7 +118,7 @@ func parseRuntime(str string, err error) (*definition.StrategyRuntime, error) {
 }
 
 func parseTaskRuntime(str string, err error) (*definition.TaskRuntime, error) {
-	if err != nil && !strings.Contains(err.Error(), "redis: nil") {
+	if hasError(err) {
 		return nil, err
 	}
 	if str == "" {
@@ -128,7 +133,7 @@ func parseTaskRuntime(str string, err error) (*definition.TaskRuntime, error) {
 }
 
 func parseTaskAssignment(str string, err error) (*definition.TaskAssignment, error) {
-	if err != nil && !strings.Contains(err.Error(), "redis: nil") {
+	if hasError(err) {
 		return nil, err
 	}
 	if str == "" {
@@ -143,7 +148,7 @@ func parseTaskAssignment(str string, err error) (*definition.TaskAssignment, err
 }
 
 func parseScheduler(str string, err error) (*definition.Scheduler, error) {
-	if err != nil && !strings.Contains(err.Error(), "redis: nil") {
+	if hasError(err) {
 		return nil, err
 	}
 	if str == "" {
@@ -184,8 +189,8 @@ func (s *RedisStore) keyTaskRuntimes(taskId string) string {
 	return s.key("taskRuntimes/" + taskId)
 }
 
-func (s *RedisStore) keyTaskRelaod(taskId string) string {
-	return s.key("taskReload/" + taskId)
+func (s *RedisStore) keyTaskItemsConfigVersion() string {
+	return s.key("taskItemConfigVersion")
 }
 
 func (s *RedisStore) keyTaskAssignments(taskId string) string {
@@ -247,12 +252,17 @@ func (s *RedisStore) GetTasks() ([]*definition.Task, error) {
 		return []*definition.Task{}, nil
 	}
 	list := make([]*definition.Task, 0, cnt)
+	keys := make(sort.StringSlice, 0, cnt)
 	valMap, err := s.client.HGetAll(key).Result()
 	if err != nil {
 		return nil, err
 	}
-	for _, v := range valMap {
-		task, err := parseTask(v, err)
+	for k := range valMap {
+		keys = append(keys, k)
+	}
+	keys.Sort()
+	for _, k := range keys {
+		task, err := parseTask(valMap[k], err)
 		if err != nil {
 			// ignore
 			continue
@@ -340,26 +350,20 @@ func (s *RedisStore) RemoveTaskRuntime(taskId, id string) error {
 	return err
 }
 
-func (s *RedisStore) ShouldTaskReloadItems(taskId, id string) bool {
-	key := s.keyTaskRelaod(taskId)
-	val, err := s.client.HGet(key, id).Int()
-	if err != nil {
-		return false
+func (s *RedisStore) GetTaskItemsConfigVersion(strategyId, taskId string) (int64, error) {
+	key := s.keyTaskItemsConfigVersion()
+	subKey := strategyId + "/" + taskId
+	val, err := s.client.HGet(key, subKey).Int64()
+	if hasError(err) {
+		return 0, err
 	}
-	return val > 0
+	return val, nil
 }
 
-func (s *RedisStore) RequireTaskReloadItems(taskId, id string) error {
-	key := s.keyTaskRelaod(taskId)
-	err := s.client.HSet(key, id, 1).Err()
-	// 1 hour to expire without any new change
-	s.client.Expire(key, time.Hour)
-	return err
-}
-
-func (s *RedisStore) ClearTaskReloadItems(taskId, id string) error {
-	key := s.keyTaskRelaod(taskId)
-	return s.client.HDel(key, id).Err()
+func (s *RedisStore) IncreaseTaskItemsConfigVersion(strategyId, taskId string) error {
+	key := s.keyTaskItemsConfigVersion()
+	subKey := strategyId + "/" + taskId
+	return s.client.HIncrBy(key, subKey, 1).Err()
 }
 
 //
@@ -421,12 +425,17 @@ func (s *RedisStore) GetStrategies() ([]*definition.Strategy, error) {
 		return []*definition.Strategy{}, nil
 	}
 	list := make([]*definition.Strategy, 0, cnt)
+	keys := make(sort.StringSlice, 0, cnt)
 	valMap, err := s.client.HGetAll(key).Result()
 	if err != nil {
 		return nil, err
 	}
-	for _, v := range valMap {
-		task, err := parseStrategy(v, err)
+	for k := range valMap {
+		keys = append(keys, k)
+	}
+	keys.Sort()
+	for _, k := range keys {
+		task, err := parseStrategy(valMap[k], err)
 		if err != nil {
 			// ignore
 			continue
@@ -581,10 +590,11 @@ func (s *RedisStore) GetSchedulers() ([]*definition.Scheduler, error) {
 }
 
 func dumpMap(b *strings.Builder, m map[string]string) {
-	keys := make([]string, 0, len(m))
+	keys := make(sort.StringSlice, 0, len(m))
 	for k := range m {
 		keys = append(keys, k)
 	}
+	keys.Sort()
 	for _, k := range keys {
 		b.WriteString("\t")
 		b.WriteString(k)
@@ -617,10 +627,10 @@ func (s *RedisStore) Dump() string {
 		dumpMap(b, s.client.HGetAll(s.keyTaskRuntimes(task.Id)).Val())
 	}
 
-	b.WriteString("\nTaskReloads:\n")
-	for _, task := range tasks {
-		dumpMap(b, s.client.HGetAll(s.keyTaskRelaod(task.Id)).Val())
-	}
+	b.WriteString("\nTaskItemsConfigVersion:\n")
+	b.WriteString(s.keyTaskItemsConfigVersion())
+	b.WriteString(": \n")
+	dumpMap(b, s.client.HGetAll(s.keyTaskItemsConfigVersion()).Val())
 
 	b.WriteString("\nTaskAssignments:\n")
 	for _, task := range tasks {

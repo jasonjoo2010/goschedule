@@ -58,9 +58,11 @@ type Store interface {
 	GetTaskRuntimes(taskId string) ([]*definition.TaskRuntime, error)
 	SetTaskRuntime(runtime *definition.TaskRuntime) error
 	RemoveTaskRuntime(taskId, id string) error
-	ShouldTaskReloadItems(taskId, id string) bool
-	RequireTaskReloadItems(taskId, id string) error
-	ClearTaskReloadItems(taskId, id string) error
+
+	// reloading support
+	// it will guarantee that the version is incresing only.
+	GetTaskItemsConfigVersion(strategyId, taskId string) (int64, error)
+	IncreaseTaskItemsConfigVersion(strategyId, taskId string) error
 
 	// task assignments
 	GetTaskAssignment(taskId, itemId string) (*definition.TaskAssignment, error)

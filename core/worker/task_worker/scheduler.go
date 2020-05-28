@@ -10,6 +10,10 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const (
+	RUNTIME_EMPTY = "<empty>"
+)
+
 type runtimeAssign struct {
 	RuntimeId string
 	Items     []string
@@ -68,9 +72,12 @@ func (w *TaskWorker) getCurrentAssignments() (map[string]*definition.TaskAssignm
 		if t.RuntimeId == "" && t.RequestedRuntimeId == "" {
 			spareAssignments = append(spareAssignments, t)
 		}
-		rid := t.RuntimeId
-		if rid == "" && t.RequestedRuntimeId != "" {
-			rid = t.RequestedRuntimeId
+		rid := t.RequestedRuntimeId
+		if rid == "" {
+			rid = t.RuntimeId
+		}
+		if rid == RUNTIME_EMPTY {
+			continue
 		}
 		if r, ok := runtimesMap[rid]; !ok {
 			// abnormal
@@ -122,16 +129,22 @@ func (w *TaskWorker) distributeTaskItems() {
 	if err != nil {
 		logrus.Error("Fetch assignments of task items error: ", err.Error())
 	}
+	// regenerate uuids array to guarantee consistence
+	uuids = uuids[:0]
+	for _, assign := range assigned {
+		uuids = append(uuids, assign.RuntimeId)
+	}
 	// try balance the task items
 	items := w.taskDefine.Items
 	balanced := utils.AssignWorkers(len(uuids), len(items), w.taskDefine.MaxTaskItems)
-	changedRuntimes := make(map[string]int, 0)
+	var changed bool
 	for pos, target := range balanced {
 		cur := assigned[pos]
 		cnt := len(cur.Items)
 		if cnt == target {
 			continue
 		}
+		changed = true
 		if cnt > target {
 			// decrease
 			for i := 0; i < cnt-target; i++ {
@@ -139,10 +152,10 @@ func (w *TaskWorker) distributeTaskItems() {
 				itemId := cur.Items[len-1]
 				cur.Items = cur.Items[:len-1]
 				item := assignMap[itemId]
-				item.RequestedRuntimeId = ""
+				item.RequestedRuntimeId = RUNTIME_EMPTY
 				spares = append(spares, item)
+				w.store.SetTaskAssignment(item)
 			}
-			changedRuntimes[cur.RuntimeId] = 1
 			logrus.Info("Decrease ", cnt-target, " task item(s) from ", cur.RuntimeId)
 		} else if cnt < target {
 			// increase
@@ -158,20 +171,17 @@ func (w *TaskWorker) distributeTaskItems() {
 				if item.RuntimeId == "" {
 					item.RuntimeId = cur.RuntimeId
 					item.RequestedRuntimeId = ""
-					changedRuntimes[cur.RuntimeId] = 1
 				} else {
 					item.RequestedRuntimeId = cur.RuntimeId
-					changedRuntimes[item.RuntimeId] = 1
 				}
 				w.store.SetTaskAssignment(item)
 			}
 			logrus.Info("Increase ", target-cnt, " task item(s) to ", cur.RuntimeId)
 		}
 	}
-	for rid := range changedRuntimes {
-		w.store.RequireTaskReloadItems(w.taskDefine.Id, rid)
+	if changed {
+		w.store.IncreaseTaskItemsConfigVersion(w.strategyId, w.taskDefine.Id)
 	}
-	// TODO verify whether there may be consistence problem between reload flags and actual data
 }
 
 // assignTaskItems reloads task items and release items others requests
@@ -195,10 +205,14 @@ func (w *TaskWorker) reloadTaskItems() {
 			// mine, but should release it
 			// update TaskWorker first
 			w.taskItems = utils.RemoveTaskItem(w.taskItems, assignment.ItemId)
-			assignment.RuntimeId = assignment.RequestedRuntimeId
+			if assignment.RequestedRuntimeId == RUNTIME_EMPTY {
+				assignment.RuntimeId = ""
+			} else {
+				assignment.RuntimeId = assignment.RequestedRuntimeId
+			}
 			assignment.RequestedRuntimeId = ""
 			w.store.SetTaskAssignment(assignment)
-			w.store.RequireTaskReloadItems(w.taskDefine.Id, assignment.RuntimeId)
+			w.store.IncreaseTaskItemsConfigVersion(w.strategyId, w.taskDefine.Id)
 			logrus.Info("Release task item [", assignment.ItemId, "] for ", assignment.TaskId)
 			removedItems++
 			continue
@@ -212,7 +226,6 @@ func (w *TaskWorker) reloadTaskItems() {
 			newItems++
 		}
 	}
-	w.store.ClearTaskReloadItems(w.taskDefine.Id, w.runtime.Id)
 	logrus.Info("Reload task items, ", newItems, " items added, ", removedItems, " items released")
 }
 
