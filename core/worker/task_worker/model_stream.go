@@ -23,7 +23,7 @@ func (m *StreamModel) LoopOnce() {
 		// fill it
 		if m.sem.TryAcquire(1) {
 			defer m.sem.Release(1)
-			m.worker.requestSelecting()
+			m.worker.selectOnce()
 			return
 		}
 	}

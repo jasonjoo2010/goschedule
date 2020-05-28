@@ -60,9 +60,9 @@ type TaskWorker struct {
 	noItemsCycles  int
 	store          store.Store
 	runtime        definition.TaskRuntime
-	selectC        chan int
 	notifierC      chan int
 	data           chan interface{}
+	queuedData     []interface{}
 	model          TaskModel
 	executor       TaskExecutor
 	task           TaskBase
@@ -160,9 +160,8 @@ func NewTask(strategy definition.Strategy, task definition.Task, store store.Sto
 	}
 	logrus.Info("New task ", task.Id, " created")
 	w := &TaskWorker{
-		selectC:         make(chan int),
 		notifierC:       make(chan int),
-		data:            make(chan interface{}, utils.Max(10, task.FetchCount*2)),
+		data:            make(chan interface{}, utils.Max(10, task.FetchCount*len(task.Items)*2)),
 		TimeoutShutdown: 10 * time.Second,
 		task:            inst,
 		strategyDefine:  strategy,
@@ -247,6 +246,18 @@ func (w *TaskWorker) executeOnceOrWait() {
 	w.executor.ExecuteOrWait()
 }
 
+func (w *TaskWorker) fillOrQueued(arr []interface{}) {
+	for i, obj := range arr {
+		select {
+		case w.data <- obj:
+		default:
+			// should not happen
+			w.queuedData = append(w.queuedData, arr[i:]...)
+			return
+		}
+	}
+}
+
 func (w *TaskWorker) selectOnce() {
 	// lock to block other routine from select concurrently (Especially in stream model)
 	w.Lock()
@@ -256,6 +267,12 @@ func (w *TaskWorker) selectOnce() {
 			logrus.Error("Selecting error: ", r)
 		}
 	}()
+	if len(w.queuedData) > 0 {
+		arr := w.queuedData
+		w.queuedData = nil
+		w.fillOrQueued(arr)
+		return
+	}
 	if w.store.ShouldTaskReloadItems(w.taskDefine.Id, w.runtime.Id) {
 		// make sure no queued items
 		maxWait := time.Millisecond * 500
@@ -292,48 +309,10 @@ func (w *TaskWorker) selectOnce() {
 		}
 		return
 	}
-	for _, obj := range arr {
-		w.data <- obj
-	}
+	w.fillOrQueued(arr)
 	if w.interval > 0 {
 		utils.Delay(w, w.interval)
 	}
-}
-
-func (w *TaskWorker) selectLoop() {
-	timer := time.NewTimer(time.Second)
-LOOP:
-	for {
-		timer.Reset(time.Second)
-		select {
-		case <-w.selectC:
-			timer.Stop()
-			if w.needStop {
-				break LOOP
-			}
-			w.selectOnce()
-			timer.Reset(time.Second)
-			select {
-			case w.selectC <- 2:
-			case <-timer.C:
-			}
-		case <-timer.C:
-			// next
-			if w.needStop {
-				break LOOP
-			}
-		}
-	}
-	close(w.selectC)
-}
-
-// inner loop, select() -> execute()
-func (w *TaskWorker) requestSelecting() {
-	if w.needStop {
-		return
-	}
-	w.selectC <- 1
-	<-w.selectC
 }
 
 func (w *TaskWorker) loopOther() {
@@ -361,8 +340,13 @@ func (w *TaskWorker) loopMain() {
 		atomic.AddInt32(&w.executors, -1)
 		close(w.data)
 		// empty the queue
-		for len(w.data) > 0 {
+		for len(w.data) > 0 || len(w.queuedData) > 0 {
 			w.executor.ExecuteOrReturn()
+			if len(w.data) == 0 && len(w.queuedData) > 0 {
+				w.queuedData = nil
+				arr := w.queuedData
+				w.fillOrQueued(arr)
+			}
 		}
 		// wait executors
 		for w.executors > 0 {
@@ -405,7 +389,6 @@ func (w *TaskWorker) Start(strategyId, parameter string) {
 	go w.loopMain()
 	go w.heartbeat()
 	go w.schedule()
-	go w.selectLoop()
 }
 
 func (w *TaskWorker) Stop(strategyId, parameter string) {

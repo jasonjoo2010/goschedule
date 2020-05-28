@@ -25,6 +25,24 @@ func TestSelectOnce(t *testing.T) {
 	assert.Equal(t, 0, len(w.data))
 	w.selectOnce()
 	assert.Equal(t, 3, len(w.data))
+	assert.Equal(t, 0, len(w.queuedData))
+}
+
+func TestSelectQueued(t *testing.T) {
+	w := newTaskWorker()
+	w.data = make(chan interface{}, 1)
+	memoryStore.RequireTaskReloadItems(w.taskDefine.Id, w.runtime.Id)
+	assert.Equal(t, 0, len(w.data))
+	w.selectOnce()
+	assert.Equal(t, 1, len(w.data))
+	assert.Equal(t, 2, len(w.queuedData))
+	w.selectOnce()
+	assert.Equal(t, 1, len(w.data))
+	assert.Equal(t, 2, len(w.queuedData))
+	<-w.data
+	w.selectOnce()
+	assert.Equal(t, 1, len(w.data))
+	assert.Equal(t, 1, len(w.queuedData))
 }
 
 func TestRegister(t *testing.T) {
