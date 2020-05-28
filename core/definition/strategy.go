@@ -39,6 +39,7 @@ func (s *Strategy) String() string {
 type StrategyRuntime struct {
 	SchedulerId  string
 	StrategyId   string
+	CreateAt     int64
 	Num          int
 	RequestedNum int
 }

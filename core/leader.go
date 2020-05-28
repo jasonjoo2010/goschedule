@@ -18,8 +18,17 @@ func (s *ScheduleManager) isLeader(strategyId string) bool {
 		return false
 	}
 	arr := make([]string, len(list))
+	var myself *definition.StrategyRuntime
 	for i, runtime := range list {
 		arr[i] = runtime.SchedulerId
+		if runtime.SchedulerId == s.scheduler.Id {
+			myself = runtime
+		}
+	}
+	now := time.Now().Unix() * 1000
+	if myself != nil && now-myself.CreateAt < 10_000 {
+		// schedule after 10 seconds
+		return false
 	}
 	return utils.IsLeader(arr, s.scheduler.Id)
 }
@@ -72,6 +81,7 @@ func (s *ScheduleManager) generateRuntimes() {
 				runtime = &definition.StrategyRuntime{
 					SchedulerId: s.scheduler.Id,
 					StrategyId:  strategy.Id,
+					CreateAt:    time.Now().Unix() * 1000,
 				}
 				s.store.SetStrategyRuntime(runtime)
 			}

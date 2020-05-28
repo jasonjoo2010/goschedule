@@ -21,6 +21,8 @@ func TestGeneral(t *testing.T) {
 
 func TestSelectOnce(t *testing.T) {
 	w := newTaskWorker()
+	item1 := definition.TaskItem{}
+	w.taskItems = []definition.TaskItem{item1}
 	memoryStore.IncreaseTaskItemsConfigVersion(w.strategyId, w.taskDefine.Id)
 	assert.Equal(t, 0, len(w.data))
 	w.selectOnce()
@@ -30,6 +32,8 @@ func TestSelectOnce(t *testing.T) {
 
 func TestSelectQueued(t *testing.T) {
 	w := newTaskWorker()
+	item1 := definition.TaskItem{}
+	w.taskItems = []definition.TaskItem{item1}
 	w.data = make(chan interface{}, 1)
 	memoryStore.IncreaseTaskItemsConfigVersion(w.strategyId, w.taskDefine.Id)
 	assert.Equal(t, 0, len(w.data))

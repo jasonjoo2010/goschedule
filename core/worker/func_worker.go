@@ -55,7 +55,7 @@ func NewFunc(strategy definition.Strategy) (Worker, error) {
 			}
 		}
 	}
-	logrus.Info("Create a func worker, cron=", w.schedBegin, ", interval=", w.interval/time.Millisecond, "ms")
+	logrus.Info("Create a func worker, cron=", w.schedBegin, ", interval=", w.interval/time.Millisecond)
 	return w, nil
 }
 

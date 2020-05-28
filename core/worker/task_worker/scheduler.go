@@ -195,14 +195,36 @@ func (w *TaskWorker) reloadTaskItems() {
 	newItems := 0
 	removedItems := 0
 	for _, assignment := range assignments {
-		if assignment.RuntimeId != "" &&
-			assignment.RuntimeId != w.runtime.Id {
+		if assignment.RuntimeId == "" {
+			if assignment.RequestedRuntimeId == w.runtime.Id {
+				// mine, update
+				if !utils.ContainsTaskItem(w.taskItems, assignment.ItemId) {
+					// remove from local
+					w.taskItems = append(w.taskItems, definition.TaskItem{
+						Id:        assignment.ItemId,
+						Parameter: assignment.Paramenter,
+					})
+					newItems++
+				}
+				assignment.RuntimeId = w.runtime.Id
+				assignment.RequestedRuntimeId = ""
+				w.store.SetTaskAssignment(assignment)
+			} else {
+				// not mine, none of my business
+				if utils.ContainsTaskItem(w.taskItems, assignment.ItemId) {
+					// remove from local
+					w.taskItems = utils.RemoveTaskItem(w.taskItems, assignment.ItemId)
+					removedItems++
+				}
+			}
+			continue
+		} else if assignment.RuntimeId != w.runtime.Id {
 			// not mine
 			continue
 		}
-		if assignment.RuntimeId == w.runtime.Id &&
-			assignment.RequestedRuntimeId != "" {
-			// mine, but should release it
+		// current mine
+		if assignment.RequestedRuntimeId != "" {
+			// should release it
 			// update TaskWorker first
 			w.taskItems = utils.RemoveTaskItem(w.taskItems, assignment.ItemId)
 			if assignment.RequestedRuntimeId == RUNTIME_EMPTY {

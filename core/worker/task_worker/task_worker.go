@@ -221,7 +221,7 @@ func NewTask(strategy definition.Strategy, task definition.Task, store store.Sto
 			task:   t,
 		}
 	}
-	logrus.Info("Create a task worker, cronStart=", w.schedStart, ", cronEnd=", w.schedEnd, ", interval=", w.interval/time.Millisecond, "ms")
+	logrus.Info("Create a task worker, cronStart=", w.schedStart, ", cronEnd=", w.schedEnd, ", interval=", w.interval/time.Millisecond)
 	return w, nil
 }
 
