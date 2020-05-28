@@ -125,7 +125,7 @@ func (w *TaskWorker) distributeTaskItems() {
 	// try balance the task items
 	items := w.taskDefine.Items
 	balanced := utils.AssignWorkers(len(uuids), len(items), w.taskDefine.MaxTaskItems)
-	changedRuntimes := make([]string, 0)
+	changedRuntimes := make(map[string]int, 0)
 	for pos, target := range balanced {
 		cur := assigned[pos]
 		cnt := len(cur.Items)
@@ -142,6 +142,7 @@ func (w *TaskWorker) distributeTaskItems() {
 				item.RequestedRuntimeId = ""
 				spares = append(spares, item)
 			}
+			changedRuntimes[cur.RuntimeId] = 1
 			logrus.Info("Decrease ", cnt-target, " task item(s) from ", cur.RuntimeId)
 		} else if cnt < target {
 			// increase
@@ -157,17 +158,17 @@ func (w *TaskWorker) distributeTaskItems() {
 				if item.RuntimeId == "" {
 					item.RuntimeId = cur.RuntimeId
 					item.RequestedRuntimeId = ""
-					changedRuntimes = append(changedRuntimes, cur.RuntimeId)
+					changedRuntimes[cur.RuntimeId] = 1
 				} else {
 					item.RequestedRuntimeId = cur.RuntimeId
-					changedRuntimes = append(changedRuntimes, item.RuntimeId)
+					changedRuntimes[item.RuntimeId] = 1
 				}
 				w.store.SetTaskAssignment(item)
 			}
 			logrus.Info("Increase ", target-cnt, " task item(s) to ", cur.RuntimeId)
 		}
 	}
-	for _, rid := range changedRuntimes {
+	for rid := range changedRuntimes {
 		w.store.RequireTaskReloadItems(w.taskDefine.Id, rid)
 	}
 	// TODO verify whether there may be consistence problem between reload flags and actual data
