@@ -50,7 +50,7 @@ func New(store store.Store) (*ScheduleManager, error) {
 		HeartbeatInterval: 5000 * time.Millisecond,
 		DeathTimeout:      60000 * time.Millisecond,
 		ScheduleInterval:  10000 * time.Millisecond,
-		ShutdownTimeout:   10000 * time.Millisecond,
+		ShutdownTimeout:   120000 * time.Millisecond,
 	}
 	return m, nil
 }

@@ -147,6 +147,10 @@ func (w *TaskWorker) distributeTaskItems() {
 	for _, assign := range assigned {
 		uuids = append(uuids, assign.RuntimeId)
 	}
+	if len(uuids) < 1 {
+		// empty runtimes
+		return
+	}
 	// try balance the task items
 	items := w.taskDefine.Items
 	balanced := utils.AssignWorkers(len(uuids), len(items), w.taskDefine.MaxTaskItems)

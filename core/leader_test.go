@@ -36,11 +36,13 @@ func TestLeader(t *testing.T) {
 	assert.False(t, manager1.isLeader("s0"))
 	assert.False(t, manager2.isLeader("s0"))
 
+	manager1.registerInfo()
 	manager1.generateRuntimes()
 
 	assert.True(t, manager1.isLeader("s0"))
 	assert.False(t, manager2.isLeader("s0"))
 
+	manager1.registerInfo()
 	manager2.generateRuntimes()
 
 	isLeader1 := manager1.isLeader("s0")

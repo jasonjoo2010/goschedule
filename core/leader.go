@@ -30,7 +30,17 @@ func (s *ScheduleManager) isLeader(strategyId string) bool {
 		// schedule after stalling
 		return false
 	}
-	return utils.IsLeader(arr, s.scheduler.Id)
+	leaderUUID := utils.FetchLeader(arr)
+	if leaderUUID == s.scheduler.Id {
+		return true
+	}
+	// double check the scheduler really exists
+	scheduler, _ := s.store.GetScheduler(leaderUUID)
+	if scheduler == nil {
+		// dirty runtime
+		s.cleanScheduler(leaderUUID)
+	}
+	return false
 }
 
 func (s *ScheduleManager) cleanScheduler(schedulerId string) {
