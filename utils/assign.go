@@ -57,6 +57,24 @@ func compareWithSequence(s1, s2 string) bool {
 	return seq1 < seq2
 }
 
+func SortTaskRuntimes(taskRuntimes []*definition.TaskRuntime) {
+	if len(taskRuntimes) <= 1 {
+		return
+	}
+	sort.Slice(taskRuntimes, func(i, j int) bool {
+		return compareWithSequence(taskRuntimes[i].Id, taskRuntimes[j].Id)
+	})
+}
+
+func SortTaskAssignments(TaskAssignments []*definition.TaskAssignment) {
+	if len(TaskAssignments) <= 1 {
+		return
+	}
+	sort.Slice(TaskAssignments, func(i, j int) bool {
+		return TaskAssignments[i].ItemId < TaskAssignments[j].ItemId
+	})
+}
+
 func SortSchedulers(schedulers []*definition.Scheduler) {
 	if len(schedulers) <= 1 {
 		return

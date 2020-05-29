@@ -331,6 +331,7 @@ func (s *RedisStore) GetTaskRuntimes(strategyId, taskId string) ([]*definition.T
 		}
 		list = append(list, runtime)
 	}
+	utils.SortTaskRuntimes(list)
 	return list, nil
 }
 
@@ -390,6 +391,7 @@ func (s *RedisStore) GetTaskAssignments(strategyId, taskId string) ([]*definitio
 		}
 		list = append(list, assignment)
 	}
+	utils.SortTaskAssignments(list)
 	return list, nil
 }
 

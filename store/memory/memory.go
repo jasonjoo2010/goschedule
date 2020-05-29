@@ -171,6 +171,7 @@ func (s *MemoryStore) GetTaskRuntimes(strategyId, taskId string) ([]*definition.
 			arr = append(arr, &r)
 		}
 	}
+	utils.SortTaskRuntimes(arr)
 	return arr, nil
 }
 
@@ -232,6 +233,7 @@ func (s *MemoryStore) GetTaskAssignments(strategyId, taskId string) ([]*definiti
 			arr = append(arr, &r)
 		}
 	}
+	utils.SortTaskAssignments(arr)
 	return arr, nil
 }
 

@@ -103,6 +103,49 @@ func TestSortSchedulers(t *testing.T) {
 	assert.Equal(t, "b$b$3$00000013", schedulers[3].Id)
 }
 
+func TestSortTaskRuntimes(t *testing.T) {
+	runtimes := make([]*definition.TaskRuntime, 4)
+	runtimes[0] = &definition.TaskRuntime{
+		Id: "a$b$3$00000012",
+	}
+	runtimes[1] = &definition.TaskRuntime{
+		Id: "c$b$3$00000011",
+	}
+	runtimes[2] = &definition.TaskRuntime{
+		Id: "b$b$3$00000013",
+	}
+	runtimes[3] = &definition.TaskRuntime{
+		Id: "a$b$3$000009",
+	}
+
+	SortTaskRuntimes(runtimes)
+
+	assert.Equal(t, "a$b$3$000009", runtimes[0].Id)
+	assert.Equal(t, "b$b$3$00000013", runtimes[3].Id)
+}
+
+func TestSortTaskAssignments(t *testing.T) {
+	assignments := make([]*definition.TaskAssignment, 4)
+	assignments[0] = &definition.TaskAssignment{
+		ItemId: "a",
+	}
+	assignments[1] = &definition.TaskAssignment{
+		ItemId: "c",
+	}
+	assignments[2] = &definition.TaskAssignment{
+		ItemId: "bb",
+	}
+	assignments[3] = &definition.TaskAssignment{
+		ItemId: "b",
+	}
+
+	SortTaskAssignments(assignments)
+
+	assert.Equal(t, "a", assignments[0].ItemId)
+	assert.Equal(t, "bb", assignments[2].ItemId)
+	assert.Equal(t, "c", assignments[3].ItemId)
+}
+
 func TestContainsTaskItem(t *testing.T) {
 	arr := make([]definition.TaskItem, 0, 10)
 	arr = append(arr, definition.TaskItem{
