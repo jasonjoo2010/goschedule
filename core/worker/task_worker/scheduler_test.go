@@ -15,19 +15,21 @@ func TestClearExpiredRuntimes(t *testing.T) {
 		Id:            "r1",
 		LastHeartBeat: now,
 		TaskId:        TEST_TASK_ID,
+		StrategyId:    TEST_STRATEGY_ID,
 	}
 	memoryStore.SetTaskRuntime(validRuntime)
 	memoryStore.SetTaskRuntime(&definition.TaskRuntime{
 		Id:            "r0",
 		LastHeartBeat: now - 3600*1000,
 		TaskId:        TEST_TASK_ID,
+		StrategyId:    TEST_STRATEGY_ID,
 	})
-	runtimes, _ := memoryStore.GetTaskRuntimes(TEST_TASK_ID)
+	runtimes, _ := memoryStore.GetTaskRuntimes(TEST_STRATEGY_ID, TEST_TASK_ID)
 	assert.Equal(t, 2, len(runtimes))
 	w := newTaskWorker()
 	uuids, validRuntimes, err := w.clearExpiredRuntimes()
 	assert.Nil(t, err)
-	runtimes, _ = memoryStore.GetTaskRuntimes(TEST_TASK_ID)
+	runtimes, _ = memoryStore.GetTaskRuntimes(TEST_STRATEGY_ID, TEST_TASK_ID)
 	assert.Equal(t, 1, len(runtimes))
 	assert.Equal(t, validRuntime.Id, runtimes[0].Id)
 
@@ -43,20 +45,22 @@ func TestGetCurrentAssignments(t *testing.T) {
 		Id:            "r1",
 		LastHeartBeat: time.Now().Unix() * 1000,
 		TaskId:        TEST_TASK_ID,
+		StrategyId:    TEST_STRATEGY_ID,
 	})
 	w := newTaskWorker()
 	w.registerTaskRuntime()
 	memoryStore.SetTaskAssignment(&definition.TaskAssignment{
-		TaskId:    TEST_TASK_ID,
-		ItemId:    "p1",
-		RuntimeId: w.runtime.Id,
+		StrategyId: TEST_STRATEGY_ID,
+		TaskId:     TEST_TASK_ID,
+		ItemId:     "p1",
+		RuntimeId:  w.runtime.Id,
 	})
-	assignments1, _ := memoryStore.GetTaskAssignments(TEST_TASK_ID)
+	assignments1, _ := memoryStore.GetTaskAssignments(TEST_STRATEGY_ID, TEST_TASK_ID)
 	assert.Equal(t, 1, len(assignments1))
 
 	assignMap, spares, runtimeAssigns, _ := w.getCurrentAssignments()
 
-	assignments2, _ := memoryStore.GetTaskAssignments(TEST_TASK_ID)
+	assignments2, _ := memoryStore.GetTaskAssignments(TEST_STRATEGY_ID, TEST_TASK_ID)
 	assert.Equal(t, 2, len(assignments2))
 
 	assert.NotNil(t, assignMap)
@@ -68,6 +72,7 @@ func TestGetCurrentAssignments(t *testing.T) {
 	assert.True(t, len(runtimeAssigns[0].Items) > len(runtimeAssigns[1].Items))
 
 	memoryStore.SetTaskAssignment(&definition.TaskAssignment{
+		StrategyId:         TEST_STRATEGY_ID,
 		TaskId:             TEST_TASK_ID,
 		ItemId:             "p0",
 		RuntimeId:          w.runtime.Id,
@@ -77,6 +82,7 @@ func TestGetCurrentAssignments(t *testing.T) {
 	assert.Equal(t, len(runtimeAssigns[0].Items), len(runtimeAssigns[1].Items))
 
 	memoryStore.SetTaskAssignment(&definition.TaskAssignment{
+		StrategyId:         TEST_STRATEGY_ID,
 		TaskId:             TEST_TASK_ID,
 		ItemId:             "p0",
 		RuntimeId:          w.runtime.Id,
@@ -86,6 +92,7 @@ func TestGetCurrentAssignments(t *testing.T) {
 	assert.True(t, len(runtimeAssigns[0].Items) > len(runtimeAssigns[1].Items))
 
 	memoryStore.SetTaskAssignment(&definition.TaskAssignment{
+		StrategyId:         TEST_STRATEGY_ID,
 		TaskId:             TEST_TASK_ID,
 		ItemId:             "p0",
 		RuntimeId:          "",
@@ -101,23 +108,24 @@ func TestDistributeTaskItems(t *testing.T) {
 		Id:            "r1$11111111111111",
 		LastHeartBeat: time.Now().Unix() * 1000,
 		TaskId:        TEST_TASK_ID,
+		StrategyId:    TEST_STRATEGY_ID,
 	})
 	w := newTaskWorker()
 	w.registerTaskRuntime()
 
-	assignments, _ := memoryStore.GetTaskAssignments(TEST_TASK_ID)
+	assignments, _ := memoryStore.GetTaskAssignments(TEST_STRATEGY_ID, TEST_TASK_ID)
 	assert.Equal(t, 0, len(assignments))
 
-	ver, _ := memoryStore.GetTaskItemsConfigVersion(w.strategyId, TEST_TASK_ID)
+	ver, _ := memoryStore.GetTaskItemsConfigVersion(w.strategyDefine.Id, TEST_TASK_ID)
 	w.distributeTaskItems()
 
-	assignments, _ = memoryStore.GetTaskAssignments(TEST_TASK_ID)
+	assignments, _ = memoryStore.GetTaskAssignments(TEST_STRATEGY_ID, TEST_TASK_ID)
 	assert.Equal(t, 2, len(assignments))
 	for _, assign := range assignments {
 		assert.NotEmpty(t, assign.RuntimeId)
 		assert.Empty(t, assign.RequestedRuntimeId)
 	}
-	ver1, _ := memoryStore.GetTaskItemsConfigVersion(w.strategyId, TEST_TASK_ID)
+	ver1, _ := memoryStore.GetTaskItemsConfigVersion(w.strategyDefine.Id, TEST_TASK_ID)
 	assert.True(t, ver1 > ver)
 }
 
@@ -135,15 +143,15 @@ func TestReloadTaskItems(t *testing.T) {
 	memoryStore.SetTaskRuntime(&definition.TaskRuntime{
 		Id: "r1",
 	})
-	assign, _ := memoryStore.GetTaskAssignment(TEST_TASK_ID, TEST_ITEM_ID1)
+	assign, _ := memoryStore.GetTaskAssignment(TEST_STRATEGY_ID, TEST_TASK_ID, TEST_ITEM_ID1)
 	assign.RequestedRuntimeId = "r1"
 	memoryStore.SetTaskAssignment(assign)
-	ver, _ := memoryStore.GetTaskItemsConfigVersion(w.strategyId, TEST_TASK_ID)
+	ver, _ := memoryStore.GetTaskItemsConfigVersion(w.strategyDefine.Id, TEST_TASK_ID)
 
 	w.reloadTaskItems()
 
 	assert.Equal(t, 1, len(w.taskItems))
-	ver1, _ := memoryStore.GetTaskItemsConfigVersion(w.strategyId, TEST_TASK_ID)
+	ver1, _ := memoryStore.GetTaskItemsConfigVersion(w.strategyDefine.Id, TEST_TASK_ID)
 	assert.True(t, ver1 > ver)
 }
 
@@ -151,13 +159,14 @@ func TestSchedule(t *testing.T) {
 	clearStore()
 	w := newTaskWorker()
 	memoryStore.SetTaskAssignment(&definition.TaskAssignment{
-		TaskId:    TEST_TASK_ID,
-		ItemId:    TEST_ITEM_ID1,
-		RuntimeId: w.runtime.Id,
+		StrategyId: TEST_STRATEGY_ID,
+		TaskId:     TEST_TASK_ID,
+		ItemId:     TEST_ITEM_ID1,
+		RuntimeId:  w.runtime.Id,
 	})
 	go w.schedule()
 
-	r, _ := memoryStore.GetTaskAssignment(TEST_TASK_ID, TEST_ITEM_ID1)
+	r, _ := memoryStore.GetTaskAssignment(TEST_STRATEGY_ID, TEST_TASK_ID, TEST_ITEM_ID1)
 	assert.NotNil(t, r)
 	assert.Equal(t, w.runtime.Id, r.RuntimeId)
 
@@ -169,7 +178,7 @@ func TestSchedule(t *testing.T) {
 		assert.Fail(t, "Can not stop schedule")
 	}
 
-	r, _ = memoryStore.GetTaskAssignment(TEST_TASK_ID, TEST_ITEM_ID1)
+	r, _ = memoryStore.GetTaskAssignment(TEST_STRATEGY_ID, TEST_TASK_ID, TEST_ITEM_ID1)
 	assert.NotNil(t, r)
 	assert.NotEqual(t, w.runtime.Id, r.RuntimeId)
 }

@@ -13,12 +13,13 @@ import (
 
 type ScheduleManager struct {
 	sync.Mutex
-	store            store.Store
-	scheduler        *definition.Scheduler
-	workersMap       map[string][]worker.Worker
-	shutdownNotifier chan int
-	needStop         bool
-	Started          bool
+	store             store.Store
+	scheduler         *definition.Scheduler
+	workersMap        map[string][]worker.Worker
+	shutdownNotifier  chan int
+	needStop          bool
+	Started           bool
+	StallAfterStartup int64 // in millis
 	// Interval of heartbeat
 	HeartbeatInterval time.Duration
 	// Timeout to be death
@@ -45,6 +46,7 @@ func New(store store.Store) (*ScheduleManager, error) {
 		shutdownNotifier:  make(chan int),
 		scheduler:         s,
 		workersMap:        make(map[string][]worker.Worker),
+		StallAfterStartup: 10_000,
 		HeartbeatInterval: 5000 * time.Millisecond,
 		DeathTimeout:      60000 * time.Millisecond,
 		ScheduleInterval:  10000 * time.Millisecond,

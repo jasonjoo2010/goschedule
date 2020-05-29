@@ -24,9 +24,9 @@ func TestRegister(t *testing.T) {
 	Register(&Demo{})
 	Register(&Demo{})
 	assert.NotNil(t, GetWorker(utils.TypeName(Demo{})))
-	RegisterName("a", &Demo{})
-	assert.Equal(t, reflect.TypeOf(Demo{}), GetWorker("a"))
-	assert.NotEqual(t, reflect.TypeOf(&Demo{}), GetWorker("a"))
+	RegisterName("a", &Demo{1, 2})
+	assert.Equal(t, reflect.TypeOf(&Demo{}), reflect.TypeOf(GetWorker("a")))
+	assert.NotEqual(t, &Demo{1, 2}, GetWorker("a"))
 
 	RegisterFunc("a", callback)
 	var fn FuncInterface = callback

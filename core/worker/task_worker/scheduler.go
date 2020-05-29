@@ -25,7 +25,7 @@ func (r *runtimeAssign) String() string {
 
 func (w *TaskWorker) clearExpiredRuntimes() ([]string, []*definition.TaskRuntime, error) {
 	now := time.Now().Unix() * 1000
-	runtimes, err := w.store.GetTaskRuntimes(w.taskDefine.Id)
+	runtimes, err := w.store.GetTaskRuntimes(w.strategyDefine.Id, w.taskDefine.Id)
 	if err != nil || len(runtimes) < 1 {
 		return nil, nil, err
 	}
@@ -34,7 +34,7 @@ func (w *TaskWorker) clearExpiredRuntimes() ([]string, []*definition.TaskRuntime
 	for _, r := range runtimes {
 		// expired?
 		if now-r.LastHeartBeat > int64(w.taskDefine.DeathTimeout) {
-			w.store.RemoveTaskRuntime(w.runtime.TaskId, r.Id)
+			w.store.RemoveTaskRuntime(w.runtime.StrategyId, w.runtime.TaskId, r.Id)
 			logrus.Warn("Clean expired task runtime: ", r.Id)
 			continue
 		}
@@ -45,8 +45,8 @@ func (w *TaskWorker) clearExpiredRuntimes() ([]string, []*definition.TaskRuntime
 }
 
 func (w *TaskWorker) getCurrentAssignments() (map[string]*definition.TaskAssignment, []*definition.TaskAssignment, []*runtimeAssign, error) {
-	assignments, err1 := w.store.GetTaskAssignments(w.taskDefine.Id)
-	runtimes, err2 := w.store.GetTaskRuntimes(w.taskDefine.Id)
+	assignments, err1 := w.store.GetTaskAssignments(w.strategyDefine.Id, w.taskDefine.Id)
+	runtimes, err2 := w.store.GetTaskRuntimes(w.strategyDefine.Id, w.taskDefine.Id)
 	if err1 != nil || err2 != nil {
 		if err1 != nil {
 			logrus.Error("Fetch assignments of task error: ", err1.Error())
@@ -92,6 +92,7 @@ func (w *TaskWorker) getCurrentAssignments() (map[string]*definition.TaskAssignm
 	for _, t := range w.taskDefine.Items {
 		if _, ok := assignMap[t.Id]; !ok {
 			assign := &definition.TaskAssignment{
+				StrategyId: w.strategyDefine.Id,
 				TaskId:     w.taskDefine.Id,
 				ItemId:     t.Id,
 				Paramenter: t.Parameter,
@@ -180,14 +181,14 @@ func (w *TaskWorker) distributeTaskItems() {
 		}
 	}
 	if changed {
-		w.store.IncreaseTaskItemsConfigVersion(w.strategyId, w.taskDefine.Id)
+		w.store.IncreaseTaskItemsConfigVersion(w.strategyDefine.Id, w.taskDefine.Id)
 	}
 }
 
 // assignTaskItems reloads task items and release items others requests
 //	When call this PLEASE make sure that you have NO queued data in channel
 func (w *TaskWorker) reloadTaskItems() {
-	assignments, err := w.store.GetTaskAssignments(w.taskDefine.Id)
+	assignments, err := w.store.GetTaskAssignments(w.strategyDefine.Id, w.taskDefine.Id)
 	if err != nil {
 		logrus.Error("Fetch assignments error: ", err.Error())
 		return
@@ -234,7 +235,7 @@ func (w *TaskWorker) reloadTaskItems() {
 			}
 			assignment.RequestedRuntimeId = ""
 			w.store.SetTaskAssignment(assignment)
-			w.store.IncreaseTaskItemsConfigVersion(w.strategyId, w.taskDefine.Id)
+			w.store.IncreaseTaskItemsConfigVersion(w.strategyDefine.Id, w.taskDefine.Id)
 			logrus.Info("Release task item [", assignment.ItemId, "] for ", assignment.TaskId)
 			removedItems++
 			continue
@@ -258,7 +259,7 @@ func (w *TaskWorker) schedule() {
 		w.distributeTaskItems()
 		utils.Delay(w, 60*time.Millisecond)
 	}
-	assignments, err := w.store.GetTaskAssignments(w.taskDefine.Id)
+	assignments, err := w.store.GetTaskAssignments(w.strategyDefine.Id, w.taskDefine.Id)
 	if err != nil {
 		logrus.Warn("Fetch assignments failed: ", err.Error())
 		return

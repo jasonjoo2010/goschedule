@@ -28,7 +28,7 @@ func TestSimpleWorker(t *testing.T) {
 			"Interval": "1000",
 		},
 	}
-	demo := &demoSimpleWorker{}
+	demo := &demoSimpleWorker{started: true}
 	RegisterName("demotest", demo)
 	w, _ := NewSimple(strategy)
 	assert.IsType(t, &demoSimpleWorker{}, w)

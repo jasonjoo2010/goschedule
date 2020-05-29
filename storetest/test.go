@@ -277,12 +277,12 @@ func DoTestTaskRuntime(t *testing.T, s store.Store) {
 	}
 
 	// try to fetch not existed runtime
-	runtime, err := s.GetTaskRuntime(runtimeOri1.TaskId, runtimeOri1.Id)
+	runtime, err := s.GetTaskRuntime(runtimeOri1.StrategyId, runtimeOri1.TaskId, runtimeOri1.Id)
 	assert.Nil(t, runtime)
 	assert.Equal(t, store.NotExist, err)
 
 	// try to delete not existed runtime
-	err = s.RemoveTaskRuntime(runtimeOri1.TaskId, runtimeOri1.Id)
+	err = s.RemoveTaskRuntime(runtimeOri1.StrategyId, runtimeOri1.TaskId, runtimeOri1.Id)
 	assert.Nil(t, err)
 
 	// try to create runtime
@@ -290,7 +290,7 @@ func DoTestTaskRuntime(t *testing.T, s store.Store) {
 	assert.Nil(t, err)
 
 	// fetch it back
-	runtime, err = s.GetTaskRuntime(runtimeOri1.TaskId, runtimeOri1.Id)
+	runtime, err = s.GetTaskRuntime(runtimeOri1.StrategyId, runtimeOri1.TaskId, runtimeOri1.Id)
 	assert.Nil(t, err)
 	assert.NotNil(t, runtime)
 	assert.Equal(t, runtimeOri1.TaskId, runtime.TaskId)
@@ -307,18 +307,18 @@ func DoTestTaskRuntime(t *testing.T, s store.Store) {
 	s.SetTaskRuntime(runtimeOri5)
 
 	// verify list
-	arr, err := s.GetTaskRuntimes(runtimeOri1.TaskId)
+	arr, err := s.GetTaskRuntimes(runtimeOri1.StrategyId, runtimeOri1.TaskId)
 	assert.Nil(t, err)
 	assert.NotNil(t, arr)
 	assert.Equal(t, 3, len(arr))
 
-	arr, err = s.GetTaskRuntimes(runtimeOri4.TaskId)
+	arr, err = s.GetTaskRuntimes(runtimeOri4.StrategyId, runtimeOri4.TaskId)
 	assert.Nil(t, err)
 	assert.NotNil(t, arr)
 	assert.Equal(t, 2, len(arr))
 
 	// delete
-	err = s.RemoveTaskRuntime(runtimeOri1.TaskId, runtimeOri1.Id)
+	err = s.RemoveTaskRuntime(runtimeOri1.StrategyId, runtimeOri1.TaskId, runtimeOri1.Id)
 	assert.Nil(t, err)
 
 	// re-delete
@@ -326,12 +326,12 @@ func DoTestTaskRuntime(t *testing.T, s store.Store) {
 	assert.Nil(t, err)
 
 	// verify delete
-	arr, err = s.GetTaskRuntimes(runtimeOri1.TaskId)
+	arr, err = s.GetTaskRuntimes(runtimeOri1.StrategyId, runtimeOri1.TaskId)
 	assert.Nil(t, err)
 	assert.NotNil(t, arr)
 	assert.Equal(t, 2, len(arr))
 
-	runtime, err = s.GetTaskRuntime(runtimeOri1.TaskId, runtimeOri1.Id)
+	runtime, err = s.GetTaskRuntime(runtimeOri1.StrategyId, runtimeOri1.TaskId, runtimeOri1.Id)
 	assert.NotNil(t, err)
 	assert.Equal(t, store.NotExist, err)
 	assert.Nil(t, runtime)
@@ -339,38 +339,43 @@ func DoTestTaskRuntime(t *testing.T, s store.Store) {
 
 func DoTestTaskAssignment(t *testing.T, s store.Store) {
 	assignmentOri1 := &definition.TaskAssignment{
-		TaskId:    "task1",
-		ItemId:    "a",
-		RuntimeId: "r0",
+		StrategyId: "strategy1",
+		TaskId:     "task1",
+		ItemId:     "a",
+		RuntimeId:  "r0",
 	}
 	assignmentOri2 := &definition.TaskAssignment{
-		TaskId:    "task1",
-		ItemId:    "b",
-		RuntimeId: "r1",
+		StrategyId: "strategy1",
+		TaskId:     "task1",
+		ItemId:     "b",
+		RuntimeId:  "r1",
 	}
 	assignmentOri3 := &definition.TaskAssignment{
-		TaskId:    "task1",
-		ItemId:    "c",
-		RuntimeId: "r0",
+		StrategyId: "strategy1",
+		TaskId:     "task1",
+		ItemId:     "c",
+		RuntimeId:  "r0",
 	}
 	assignmentOri4 := &definition.TaskAssignment{
-		TaskId:    "task2",
-		ItemId:    "a",
-		RuntimeId: "r0",
+		StrategyId: "strategy1",
+		TaskId:     "task2",
+		ItemId:     "a",
+		RuntimeId:  "r0",
 	}
 	assignmentOri5 := &definition.TaskAssignment{
-		TaskId:    "task2",
-		ItemId:    "b",
-		RuntimeId: "r1",
+		StrategyId: "strategy1",
+		TaskId:     "task2",
+		ItemId:     "b",
+		RuntimeId:  "r1",
 	}
 
 	// try to fetch not existed data
-	assignment, err := s.GetTaskAssignment(assignmentOri1.TaskId, assignmentOri1.ItemId)
+	assignment, err := s.GetTaskAssignment(assignmentOri1.StrategyId, assignmentOri1.TaskId, assignmentOri1.ItemId)
 	assert.Nil(t, assignment)
 	assert.Equal(t, store.NotExist, err)
 
 	// try to delete not existed data
-	err = s.RemoveTaskAssignment(assignmentOri1.TaskId, assignmentOri1.ItemId)
+	err = s.RemoveTaskAssignment(assignmentOri1.StrategyId, assignmentOri1.TaskId, assignmentOri1.ItemId)
 	assert.Nil(t, err)
 
 	// try to create one
@@ -378,7 +383,7 @@ func DoTestTaskAssignment(t *testing.T, s store.Store) {
 	assert.Nil(t, err)
 
 	// fetch it back
-	assignment, err = s.GetTaskAssignment(assignmentOri1.TaskId, assignmentOri1.ItemId)
+	assignment, err = s.GetTaskAssignment(assignmentOri1.StrategyId, assignmentOri1.TaskId, assignmentOri1.ItemId)
 	assert.Nil(t, err)
 	assert.NotNil(t, assignment)
 	assert.Equal(t, assignmentOri1.TaskId, assignment.TaskId)
@@ -395,18 +400,18 @@ func DoTestTaskAssignment(t *testing.T, s store.Store) {
 	s.SetTaskAssignment(assignmentOri5)
 
 	// verify list
-	arr, err := s.GetTaskAssignments(assignmentOri1.TaskId)
+	arr, err := s.GetTaskAssignments(assignmentOri1.StrategyId, assignmentOri1.TaskId)
 	assert.Nil(t, err)
 	assert.NotNil(t, arr)
 	assert.Equal(t, 3, len(arr))
 
-	arr, err = s.GetTaskAssignments(assignmentOri4.TaskId)
+	arr, err = s.GetTaskAssignments(assignmentOri4.StrategyId, assignmentOri4.TaskId)
 	assert.Nil(t, err)
 	assert.NotNil(t, arr)
 	assert.Equal(t, 2, len(arr))
 
 	// delete
-	err = s.RemoveTaskAssignment(assignmentOri1.TaskId, assignmentOri1.ItemId)
+	err = s.RemoveTaskAssignment(assignmentOri1.StrategyId, assignmentOri1.TaskId, assignmentOri1.ItemId)
 	assert.Nil(t, err)
 
 	// re-delete
@@ -414,12 +419,12 @@ func DoTestTaskAssignment(t *testing.T, s store.Store) {
 	assert.Nil(t, err)
 
 	// verify delete
-	arr, err = s.GetTaskAssignments(assignmentOri1.TaskId)
+	arr, err = s.GetTaskAssignments(assignmentOri1.StrategyId, assignmentOri1.TaskId)
 	assert.Nil(t, err)
 	assert.NotNil(t, arr)
 	assert.Equal(t, 2, len(arr))
 
-	assignment, err = s.GetTaskAssignment(assignmentOri1.TaskId, assignmentOri1.ItemId)
+	assignment, err = s.GetTaskAssignment(assignmentOri1.StrategyId, assignmentOri1.TaskId, assignmentOri1.ItemId)
 	assert.NotNil(t, err)
 	assert.Equal(t, store.NotExist, err)
 	assert.Nil(t, assignment)

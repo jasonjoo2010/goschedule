@@ -20,5 +20,5 @@ func (w *TaskWorker) heartbeat() {
 		w.registerTaskRuntime()
 		utils.Delay(w, time.Duration(w.taskDefine.HeartbeatInterval)*time.Millisecond)
 	}
-	w.store.RemoveTaskRuntime(w.runtime.TaskId, w.runtime.Id)
+	w.store.RemoveTaskRuntime(w.runtime.StrategyId, w.runtime.TaskId, w.runtime.Id)
 }

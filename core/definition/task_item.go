@@ -17,6 +17,7 @@ func (item *TaskItem) String() string {
 }
 
 type TaskAssignment struct {
+	StrategyId         string
 	TaskId             string
 	ItemId             string
 	RuntimeId          string

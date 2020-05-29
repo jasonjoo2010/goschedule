@@ -54,10 +54,10 @@ type Store interface {
 	RemoveTask(id string) error
 
 	// task runtimes
-	GetTaskRuntime(taskId, id string) (*definition.TaskRuntime, error)
-	GetTaskRuntimes(taskId string) ([]*definition.TaskRuntime, error)
+	GetTaskRuntime(strategyId, taskId, id string) (*definition.TaskRuntime, error)
+	GetTaskRuntimes(strategyId, taskId string) ([]*definition.TaskRuntime, error)
 	SetTaskRuntime(runtime *definition.TaskRuntime) error
-	RemoveTaskRuntime(taskId, id string) error
+	RemoveTaskRuntime(strategyId, taskId, id string) error
 
 	// reloading support
 	// it will guarantee that the version is incresing only.
@@ -65,10 +65,10 @@ type Store interface {
 	IncreaseTaskItemsConfigVersion(strategyId, taskId string) error
 
 	// task assignments
-	GetTaskAssignment(taskId, itemId string) (*definition.TaskAssignment, error)
-	GetTaskAssignments(taskId string) ([]*definition.TaskAssignment, error)
+	GetTaskAssignment(strategyId, taskId, itemId string) (*definition.TaskAssignment, error)
+	GetTaskAssignments(strategyId, taskId string) ([]*definition.TaskAssignment, error)
 	SetTaskAssignment(assignment *definition.TaskAssignment) error
-	RemoveTaskAssignment(taskId, itemId string) error
+	RemoveTaskAssignment(strategyId, taskId, itemId string) error
 
 	// strategy related
 	GetStrategy(id string) (*definition.Strategy, error)

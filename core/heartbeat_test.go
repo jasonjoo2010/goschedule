@@ -17,8 +17,10 @@ func newManager(t *testing.T, store store.Store) *ScheduleManager {
 	assert.NotNil(t, manager)
 
 	// change heartbeat rate manually
+	manager.ScheduleInterval = 100 * time.Millisecond
 	manager.HeartbeatInterval = 100 * time.Millisecond
-	manager.DeathTimeout = 1000 * time.Millisecond
+	manager.DeathTimeout = 1200 * time.Millisecond
+	manager.StallAfterStartup = 0
 
 	return manager
 }
@@ -29,8 +31,9 @@ func TestHeartbeat(t *testing.T) {
 	manager2 := newManager(t, store)
 
 	store.CreateStrategy(&definition.Strategy{
-		Id:     "test",
-		IpList: []string{"127.0.0.1"},
+		Id:      "test",
+		IpList:  []string{"127.0.0.1"},
+		Enabled: true,
 	})
 
 	manager1.Start()

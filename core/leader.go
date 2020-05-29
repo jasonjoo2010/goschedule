@@ -26,8 +26,8 @@ func (s *ScheduleManager) isLeader(strategyId string) bool {
 		}
 	}
 	now := time.Now().Unix() * 1000
-	if myself != nil && now-myself.CreateAt < 10_000 {
-		// schedule after 10 seconds
+	if myself != nil && now-myself.CreateAt < s.StallAfterStartup {
+		// schedule after stalling
 		return false
 	}
 	return utils.IsLeader(arr, s.scheduler.Id)
@@ -88,7 +88,7 @@ func (s *ScheduleManager) generateRuntimes() {
 		} else {
 			// clear runtimes if any
 			if runtime != nil {
-				logrus.Info("Clean runtime for strategy: ", runtime.StrategyId)
+				logrus.Info("Clean runtime for strategy: ", runtime.StrategyId, " with scheduler ", runtime.SchedulerId)
 				s.store.RemoveStrategyRuntime(strategy.Id, s.scheduler.Id)
 				// stop the workers
 				s.stopWorkers(strategy)
@@ -158,6 +158,9 @@ func (s *ScheduleManager) adjustWorkers() {
 			continue
 		}
 		runtime, err := s.store.GetStrategyRuntime(strategy.Id, s.scheduler.Id)
+		if err == store.NotExist {
+			continue
+		}
 		if err != nil {
 			logrus.Warn("Failed to fetch runtime for ", strategy.Id, ": ", err.Error())
 			continue

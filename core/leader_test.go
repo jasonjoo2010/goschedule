@@ -6,9 +6,21 @@ import (
 	"time"
 
 	"github.com/jasonjoo2010/goschedule/core/definition"
+	"github.com/jasonjoo2010/goschedule/core/worker"
 	"github.com/jasonjoo2010/goschedule/store/memory"
 	"github.com/stretchr/testify/assert"
 )
+
+type DemoWorker struct {
+}
+
+func (demo *DemoWorker) Start(strategyId, parameter string) {
+	fmt.Println("start for", strategyId)
+}
+
+func (demo *DemoWorker) Stop(strategyId, parameter string) {
+	fmt.Println("stop for", strategyId)
+}
 
 func TestLeader(t *testing.T) {
 	store := memory.New()
@@ -16,8 +28,9 @@ func TestLeader(t *testing.T) {
 	manager2 := newManager(t, store)
 
 	store.CreateStrategy(&definition.Strategy{
-		Id:     "s0",
-		IpList: []string{"localhost"},
+		Id:      "s0",
+		IpList:  []string{"localhost"},
+		Enabled: true,
 	})
 
 	assert.False(t, manager1.isLeader("s0"))
@@ -42,8 +55,9 @@ func TestExpiredSchedulers(t *testing.T) {
 	managerExpired := newManager(t, store)
 
 	store.CreateStrategy(&definition.Strategy{
-		Id:     "s0",
-		IpList: []string{"localhost"},
+		Id:      "s0",
+		IpList:  []string{"localhost"},
+		Enabled: true,
 	})
 
 	manager.Start()
@@ -60,18 +74,15 @@ func TestExpiredSchedulers(t *testing.T) {
 
 	runtimes, _ := store.GetStrategyRuntimes("s0")
 	assert.Equal(t, 2, len(runtimes))
-	fmt.Println(runtimes)
 
 	// Wait to cleared
-	time.Sleep(manager.DeathTimeout)
+	time.Sleep(manager.DeathTimeout + manager.ScheduleInterval)
 
 	list, _ = store.GetSchedulers()
 	assert.Equal(t, 1, len(list))
-	fmt.Println(list)
 
 	runtimes, _ = store.GetStrategyRuntimes("s0")
 	assert.Equal(t, 1, len(runtimes))
-	fmt.Println(runtimes)
 
 	manager.Shutdown()
 }
@@ -81,12 +92,14 @@ func TestGenerateRuntimes(t *testing.T) {
 	manager := newManager(t, store)
 
 	store.CreateStrategy(&definition.Strategy{
-		Id:     "s0",
-		IpList: []string{"localhost"},
+		Id:      "s0",
+		IpList:  []string{"localhost"},
+		Enabled: true,
 	})
 	store.CreateStrategy(&definition.Strategy{
-		Id:     "s1",
-		IpList: []string{"127.0.0.1"},
+		Id:      "s1",
+		IpList:  []string{"127.0.0.1"},
+		Enabled: true,
 	})
 
 	list, _ := store.GetStrategyRuntimes("s0")
@@ -102,13 +115,17 @@ func TestGenerateRuntimes(t *testing.T) {
 }
 
 func TestAssign(t *testing.T) {
+	worker.RegisterName("demo", &DemoWorker{})
 	store := memory.New()
 	manager1 := newManager(t, store)
 	manager2 := newManager(t, store)
 	manager3 := newManager(t, store)
-	manager1.ScheduleInterval = 500 * time.Millisecond
-	manager2.ScheduleInterval = 500 * time.Millisecond
-	manager3.ScheduleInterval = 500 * time.Millisecond
+	manager1.ScheduleInterval = 200 * time.Millisecond
+	manager2.ScheduleInterval = 200 * time.Millisecond
+	manager3.ScheduleInterval = 200 * time.Millisecond
+	manager1.StallAfterStartup = 0
+	manager2.StallAfterStartup = 0
+	manager3.StallAfterStartup = 0
 
 	TASK_COUNT := 2
 
@@ -117,6 +134,7 @@ func TestAssign(t *testing.T) {
 		IpList:               []string{"127.0.0.1"},
 		Total:                TASK_COUNT,
 		Kind:                 definition.SimpleKind,
+		Bind:                 "demo",
 		MaxOnSingleScheduler: 1,
 		Enabled:              true,
 	})
@@ -125,7 +143,7 @@ func TestAssign(t *testing.T) {
 	manager2.Start()
 	manager3.Start()
 
-	time.Sleep(2 * time.Second)
+	time.Sleep(time.Second)
 	runtimes, _ := store.GetStrategyRuntimes("S")
 	total := 0
 	for _, r := range runtimes {

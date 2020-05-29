@@ -51,7 +51,6 @@ type TaskComparable interface {
 //	Strategy.Bind should be the identifier of task(on console panel).
 type TaskWorker struct {
 	sync.Mutex
-	strategyId     string
 	parameter      string
 	ownSign        string
 	strategyDefine definition.Strategy
@@ -166,6 +165,7 @@ func NewTask(strategy definition.Strategy, task definition.Task, store store.Sto
 		TimeoutShutdown: 10 * time.Second,
 		task:            inst,
 		strategyDefine:  strategy,
+		ownSign:         utils.OwnSign(strategy.Id),
 		taskDefine:      task,
 		taskItems:       make([]definition.TaskItem, 0),
 		parameter:       task.Parameter,
@@ -274,7 +274,7 @@ func (w *TaskWorker) selectOnce() {
 		w.fillOrQueued(arr)
 		return
 	}
-	ver, err := w.store.GetTaskItemsConfigVersion(w.strategyId, w.taskDefine.Id)
+	ver, err := w.store.GetTaskItemsConfigVersion(w.strategyDefine.Id, w.taskDefine.Id)
 	if err == nil && w.configVersion < ver {
 		// make sure no queued items
 		maxWait := time.Millisecond * 500
@@ -384,8 +384,6 @@ func (w *TaskWorker) Start(strategyId, parameter string) {
 		return
 	}
 	w.started = true
-	w.strategyId = strategyId
-	w.ownSign = utils.OwnSign(strategyId)
 	if parameter != "" {
 		w.parameter = parameter
 	}

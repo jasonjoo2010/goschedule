@@ -12,9 +12,10 @@ import (
 )
 
 const (
-	TEST_TASK_ID  = "t0"
-	TEST_ITEM_ID1 = "p0"
-	TEST_ITEM_ID2 = "p1"
+	TEST_STRATEGY_ID = "s0"
+	TEST_TASK_ID     = "t0"
+	TEST_ITEM_ID1    = "p0"
+	TEST_ITEM_ID2    = "p1"
 )
 
 var (
@@ -69,27 +70,27 @@ func newTaskWorker() *TaskWorker {
 }
 
 func clearStore() {
-	runtimes, _ := memoryStore.GetTaskRuntimes(TEST_TASK_ID)
+	runtimes, _ := memoryStore.GetTaskRuntimes(TEST_STRATEGY_ID, TEST_TASK_ID)
 	for _, r := range runtimes {
-		memoryStore.RemoveTaskRuntime(r.TaskId, r.Id)
+		memoryStore.RemoveTaskRuntime(r.StrategyId, r.TaskId, r.Id)
 	}
 
-	assignments, _ := memoryStore.GetTaskAssignments(TEST_TASK_ID)
+	assignments, _ := memoryStore.GetTaskAssignments(TEST_STRATEGY_ID, TEST_TASK_ID)
 	for _, t := range assignments {
-		memoryStore.RemoveTaskAssignment(t.TaskId, t.ItemId)
+		memoryStore.RemoveTaskAssignment(t.StrategyId, t.TaskId, t.ItemId)
 	}
 }
 
 func TestRegisterTaskRuntime(t *testing.T) {
 	clearStore()
 	w := newTaskWorker()
-	runtimes1, _ := memoryStore.GetTaskRuntimes(TEST_TASK_ID)
+	runtimes1, _ := memoryStore.GetTaskRuntimes(TEST_STRATEGY_ID, TEST_TASK_ID)
 	w.registerTaskRuntime()
-	runtimes2, _ := memoryStore.GetTaskRuntimes(TEST_TASK_ID)
+	runtimes2, _ := memoryStore.GetTaskRuntimes(TEST_STRATEGY_ID, TEST_TASK_ID)
 	assert.Equal(t, 1, len(runtimes2)-len(runtimes1))
 	ver1 := runtimes2[len(runtimes2)-1].Version
 	w.registerTaskRuntime()
-	runtimes3, _ := memoryStore.GetTaskRuntimes(TEST_TASK_ID)
+	runtimes3, _ := memoryStore.GetTaskRuntimes(TEST_STRATEGY_ID, TEST_TASK_ID)
 	ver2 := runtimes3[len(runtimes3)-1].Version
 	assert.Equal(t, len(runtimes2), len(runtimes3))
 	assert.Equal(t, int64(1), ver2-ver1)
@@ -100,7 +101,7 @@ func TestHeartBeat(t *testing.T) {
 	w := newTaskWorker()
 	go w.heartbeat()
 	time.Sleep(500 * time.Millisecond)
-	runtimes1, _ := memoryStore.GetTaskRuntimes(TEST_TASK_ID)
+	runtimes1, _ := memoryStore.GetTaskRuntimes(TEST_STRATEGY_ID, TEST_TASK_ID)
 	assert.True(t, len(runtimes1) > 0)
 	w.needStop = true
 	select {

@@ -185,16 +185,16 @@ func (s *RedisStore) keyRuntimes(strategyId string) string {
 	return s.key("runtimes/" + strategyId)
 }
 
-func (s *RedisStore) keyTaskRuntimes(taskId string) string {
-	return s.key("taskRuntimes/" + taskId)
+func (s *RedisStore) keyTaskRuntimes(strategyId, taskId string) string {
+	return s.key("taskRuntimes/" + strategyId + "/" + taskId)
 }
 
 func (s *RedisStore) keyTaskItemsConfigVersion() string {
 	return s.key("taskItemConfigVersion")
 }
 
-func (s *RedisStore) keyTaskAssignments(taskId string) string {
-	return s.key("taskAssignments/" + taskId)
+func (s *RedisStore) keyTaskAssignments(strategyId, taskId string) string {
+	return s.key("taskAssignments/" + strategyId + "/" + taskId)
 }
 
 func (s *RedisStore) keySequence() string {
@@ -311,13 +311,13 @@ func (s *RedisStore) RemoveTask(id string) error {
 // Task instance runtime
 //
 
-func (s *RedisStore) GetTaskRuntime(taskId, id string) (*definition.TaskRuntime, error) {
-	key := s.keyTaskRuntimes(taskId)
+func (s *RedisStore) GetTaskRuntime(strategyId, taskId, id string) (*definition.TaskRuntime, error) {
+	key := s.keyTaskRuntimes(strategyId, taskId)
 	return parseTaskRuntime(s.client.HGet(key, id).Result())
 }
 
-func (s *RedisStore) GetTaskRuntimes(taskId string) ([]*definition.TaskRuntime, error) {
-	key := s.keyTaskRuntimes(taskId)
+func (s *RedisStore) GetTaskRuntimes(strategyId, taskId string) ([]*definition.TaskRuntime, error) {
+	key := s.keyTaskRuntimes(strategyId, taskId)
 	valMap, err := s.client.HGetAll(key).Result()
 	if err != nil {
 		return nil, err
@@ -335,7 +335,7 @@ func (s *RedisStore) GetTaskRuntimes(taskId string) ([]*definition.TaskRuntime, 
 }
 
 func (s *RedisStore) SetTaskRuntime(runtime *definition.TaskRuntime) error {
-	key := s.keyTaskRuntimes(runtime.TaskId)
+	key := s.keyTaskRuntimes(runtime.StrategyId, runtime.TaskId)
 	data, err := json.Marshal(runtime)
 	if err != nil {
 		return err
@@ -344,8 +344,8 @@ func (s *RedisStore) SetTaskRuntime(runtime *definition.TaskRuntime) error {
 	return err
 }
 
-func (s *RedisStore) RemoveTaskRuntime(taskId, id string) error {
-	key := s.keyTaskRuntimes(taskId)
+func (s *RedisStore) RemoveTaskRuntime(strategyId, taskId, id string) error {
+	key := s.keyTaskRuntimes(strategyId, taskId)
 	_, err := s.client.HDel(key, id).Result()
 	return err
 }
@@ -370,13 +370,13 @@ func (s *RedisStore) IncreaseTaskItemsConfigVersion(strategyId, taskId string) e
 // TaskAssignment related
 //
 
-func (s *RedisStore) GetTaskAssignment(taskId, itemId string) (*definition.TaskAssignment, error) {
-	key := s.keyTaskAssignments(taskId)
+func (s *RedisStore) GetTaskAssignment(strategyId, taskId, itemId string) (*definition.TaskAssignment, error) {
+	key := s.keyTaskAssignments(strategyId, taskId)
 	return parseTaskAssignment(s.client.HGet(key, itemId).Result())
 }
 
-func (s *RedisStore) GetTaskAssignments(taskId string) ([]*definition.TaskAssignment, error) {
-	key := s.keyTaskAssignments(taskId)
+func (s *RedisStore) GetTaskAssignments(strategyId, taskId string) ([]*definition.TaskAssignment, error) {
+	key := s.keyTaskAssignments(strategyId, taskId)
 	valMap, err := s.client.HGetAll(key).Result()
 	if err != nil {
 		return nil, err
@@ -394,7 +394,7 @@ func (s *RedisStore) GetTaskAssignments(taskId string) ([]*definition.TaskAssign
 }
 
 func (s *RedisStore) SetTaskAssignment(assignment *definition.TaskAssignment) error {
-	key := s.keyTaskAssignments(assignment.TaskId)
+	key := s.keyTaskAssignments(assignment.StrategyId, assignment.TaskId)
 	data, err := json.Marshal(assignment)
 	if err != nil {
 		return err
@@ -403,8 +403,8 @@ func (s *RedisStore) SetTaskAssignment(assignment *definition.TaskAssignment) er
 	return err
 }
 
-func (s *RedisStore) RemoveTaskAssignment(taskId, itemId string) error {
-	key := s.keyTaskAssignments(taskId)
+func (s *RedisStore) RemoveTaskAssignment(strategyId, taskId, itemId string) error {
+	key := s.keyTaskAssignments(strategyId, taskId)
 	_, err := s.client.HDel(key, itemId).Result()
 	return err
 }
@@ -620,11 +620,23 @@ func (s *RedisStore) Dump() string {
 
 	b.WriteString("\nTaskRuntimes:\n")
 	tasks, _ := s.GetTasks()
+	strategies, _ := s.GetStrategies()
+	taskMap := make(map[string]*definition.Task, len(tasks))
 	for _, task := range tasks {
+		taskMap[task.Id] = task
+	}
+	for _, strategy := range strategies {
+		if strategy.Kind != definition.TaskKind {
+			continue
+		}
+		task := taskMap[strategy.Bind]
+		if task == nil {
+			continue
+		}
 		b.WriteString("\t")
-		b.WriteString(s.keyTaskRuntimes(task.Id))
+		b.WriteString(s.keyTaskRuntimes(strategy.Id, task.Id))
 		b.WriteString(":\n")
-		dumpMap(b, s.client.HGetAll(s.keyTaskRuntimes(task.Id)).Val())
+		dumpMap(b, s.client.HGetAll(s.keyTaskRuntimes(strategy.Id, task.Id)).Val())
 	}
 
 	b.WriteString("\nTaskItemsConfigVersion:\n")
@@ -633,11 +645,18 @@ func (s *RedisStore) Dump() string {
 	dumpMap(b, s.client.HGetAll(s.keyTaskItemsConfigVersion()).Val())
 
 	b.WriteString("\nTaskAssignments:\n")
-	for _, task := range tasks {
+	for _, strategy := range strategies {
+		if strategy.Kind != definition.TaskKind {
+			continue
+		}
+		task := taskMap[strategy.Bind]
+		if task == nil {
+			continue
+		}
 		b.WriteString("\t")
-		b.WriteString(s.keyTaskAssignments(task.Id))
+		b.WriteString(s.keyTaskAssignments(strategy.Id, task.Id))
 		b.WriteString(":\n")
-		dumpMap(b, s.client.HGetAll(s.keyTaskAssignments(task.Id)).Val())
+		dumpMap(b, s.client.HGetAll(s.keyTaskAssignments(strategy.Id, task.Id)).Val())
 	}
 
 	b.WriteString("\nStrategies:\n")
@@ -646,7 +665,6 @@ func (s *RedisStore) Dump() string {
 	dumpMap(b, s.client.HGetAll(s.keyStrategies()).Val())
 
 	b.WriteString("\nRuntimes:\n")
-	strategies, _ := s.GetStrategies()
 	for _, strategy := range strategies {
 		b.WriteString("\t")
 		b.WriteString(s.keyRuntimes(strategy.Id))
