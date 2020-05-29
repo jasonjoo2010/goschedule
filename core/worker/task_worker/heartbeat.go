@@ -10,6 +10,7 @@ func (w *TaskWorker) registerTaskRuntime() {
 	now := time.Now().Unix() * 1000
 	w.runtime.LastHeartBeat = now
 	w.runtime.Version++
+	w.runtime.Statistics = w.Statistics
 	w.store.SetTaskRuntime(&w.runtime)
 }
 

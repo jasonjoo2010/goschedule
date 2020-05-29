@@ -22,7 +22,7 @@ type TaskAssignment struct {
 	ItemId             string
 	RuntimeId          string
 	RequestedRuntimeId string
-	Paramenter         string
+	Parameter          string
 }
 
 func (assign *TaskAssignment) String() string {
