@@ -48,7 +48,7 @@ func SortRuntimesWithShuffle(runtimes []*definition.StrategyRuntime) {
 
 func compareWithSequence(s1, s2 string) bool {
 	pos1 := strings.LastIndexByte(s1, '$')
-	pos2 := strings.LastIndexByte(s1, '$')
+	pos2 := strings.LastIndexByte(s2, '$')
 	if pos1 < 1 || pos2 < 1 {
 		return pos1 < pos2
 	}

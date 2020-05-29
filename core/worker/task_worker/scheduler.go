@@ -90,7 +90,12 @@ func (w *TaskWorker) getCurrentAssignments() (map[string]*definition.TaskAssignm
 		}
 	}
 	for _, t := range w.taskDefine.Items {
-		if _, ok := assignMap[t.Id]; !ok {
+		var (
+			assignRemote *definition.TaskAssignment
+			ok           bool
+		)
+		if assignRemote, ok = assignMap[t.Id]; !ok {
+			// not exist
 			assign := &definition.TaskAssignment{
 				StrategyId: w.strategyDefine.Id,
 				TaskId:     w.taskDefine.Id,
@@ -100,6 +105,13 @@ func (w *TaskWorker) getCurrentAssignments() (map[string]*definition.TaskAssignm
 			spareAssignments = append(spareAssignments, assign)
 			w.store.SetTaskAssignment(assign)
 			assignMap[t.Id] = assign
+			continue
+		}
+		// check consistent
+		if assignRemote.Parameter != t.Parameter {
+			assignRemote.Parameter = t.Parameter
+			w.store.SetTaskAssignment(assignRemote)
+			continue
 		}
 	}
 	runtimeAssigns := make([]*runtimeAssign, 0, len(runtimesMap))
