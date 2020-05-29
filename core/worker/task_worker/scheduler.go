@@ -95,7 +95,7 @@ func (w *TaskWorker) getCurrentAssignments() (map[string]*definition.TaskAssignm
 				StrategyId: w.strategyDefine.Id,
 				TaskId:     w.taskDefine.Id,
 				ItemId:     t.Id,
-				Paramenter: t.Parameter,
+				Parameter:  t.Parameter,
 			}
 			spareAssignments = append(spareAssignments, assign)
 			w.store.SetTaskAssignment(assign)
@@ -203,7 +203,7 @@ func (w *TaskWorker) reloadTaskItems() {
 					// remove from local
 					w.taskItems = append(w.taskItems, definition.TaskItem{
 						Id:        assignment.ItemId,
-						Parameter: assignment.Paramenter,
+						Parameter: assignment.Parameter,
 					})
 					newItems++
 				}
@@ -244,7 +244,7 @@ func (w *TaskWorker) reloadTaskItems() {
 			// mine, new
 			w.taskItems = append(w.taskItems, definition.TaskItem{
 				Id:        assignment.ItemId,
-				Parameter: assignment.Paramenter,
+				Parameter: assignment.Parameter,
 			})
 			newItems++
 		}
