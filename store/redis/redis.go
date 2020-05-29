@@ -506,6 +506,7 @@ func (s *RedisStore) GetStrategyRuntimes(strategyId string) ([]*definition.Strat
 		}
 		list = append(list, runtime)
 	}
+	utils.SortStrategyRuntimes(list)
 	return list, nil
 }
 

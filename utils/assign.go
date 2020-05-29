@@ -57,6 +57,15 @@ func compareWithSequence(s1, s2 string) bool {
 	return seq1 < seq2
 }
 
+func SortStrategyRuntimes(strategyRuntimes []*definition.StrategyRuntime) {
+	if len(strategyRuntimes) <= 1 {
+		return
+	}
+	sort.Slice(strategyRuntimes, func(i, j int) bool {
+		return compareWithSequence(strategyRuntimes[i].SchedulerId, strategyRuntimes[j].SchedulerId)
+	})
+}
+
 func SortTaskRuntimes(taskRuntimes []*definition.TaskRuntime) {
 	if len(taskRuntimes) <= 1 {
 		return

@@ -82,6 +82,27 @@ func TestSortRuntimesWithShuffle(t *testing.T) {
 	}
 }
 
+func TestSortStrategyRuntimes(t *testing.T) {
+	runtimes := make([]*definition.StrategyRuntime, 4)
+	runtimes[0] = &definition.StrategyRuntime{
+		SchedulerId: "a$b$3$00000012",
+	}
+	runtimes[1] = &definition.StrategyRuntime{
+		SchedulerId: "c$b$3$00000011",
+	}
+	runtimes[2] = &definition.StrategyRuntime{
+		SchedulerId: "b$b$3$00000013",
+	}
+	runtimes[3] = &definition.StrategyRuntime{
+		SchedulerId: "a$b$3$000009",
+	}
+
+	SortStrategyRuntimes(runtimes)
+
+	assert.Equal(t, "a$b$3$000009", runtimes[0].SchedulerId)
+	assert.Equal(t, "b$b$3$00000013", runtimes[3].SchedulerId)
+}
+
 func TestSortSchedulers(t *testing.T) {
 	schedulers := make([]*definition.Scheduler, 4)
 	schedulers[0] = &definition.Scheduler{
