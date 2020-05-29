@@ -635,7 +635,6 @@ func (s *RedisStore) Dump() string {
 		if task == nil {
 			continue
 		}
-		b.WriteString("\t")
 		b.WriteString(s.keyTaskRuntimes(strategy.Id, task.Id))
 		b.WriteString(":\n")
 		dumpMap(b, s.client.HGetAll(s.keyTaskRuntimes(strategy.Id, task.Id)).Val())
@@ -655,7 +654,6 @@ func (s *RedisStore) Dump() string {
 		if task == nil {
 			continue
 		}
-		b.WriteString("\t")
 		b.WriteString(s.keyTaskAssignments(strategy.Id, task.Id))
 		b.WriteString(":\n")
 		dumpMap(b, s.client.HGetAll(s.keyTaskAssignments(strategy.Id, task.Id)).Val())
@@ -668,7 +666,6 @@ func (s *RedisStore) Dump() string {
 
 	b.WriteString("\nRuntimes:\n")
 	for _, strategy := range strategies {
-		b.WriteString("\t")
 		b.WriteString(s.keyRuntimes(strategy.Id))
 		b.WriteString(":\n")
 		dumpMap(b, s.client.HGetAll(s.keyRuntimes(strategy.Id)).Val())
