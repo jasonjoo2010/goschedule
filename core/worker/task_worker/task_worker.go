@@ -410,7 +410,7 @@ LOOP:
 			}
 		case <-timeout.C:
 			// timeout
-			logrus.Error("Failed to stop a FuncWorker")
+			logrus.Error("Failed to stop a TaskWorker")
 			break LOOP
 		}
 	}

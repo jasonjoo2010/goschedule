@@ -69,14 +69,15 @@ func (w *TaskWorker) getCurrentAssignments() (map[string]*definition.TaskAssignm
 	spareAssignments := make([]*definition.TaskAssignment, 0, 1)
 	for _, t := range assignments {
 		assignMap[t.ItemId] = t
-		if t.RuntimeId == "" && t.RequestedRuntimeId == "" {
-			spareAssignments = append(spareAssignments, t)
-		}
 		rid := t.RequestedRuntimeId
 		if rid == "" {
 			rid = t.RuntimeId
 		}
 		if rid == RUNTIME_EMPTY {
+			continue
+		}
+		if rid == "" {
+			spareAssignments = append(spareAssignments, t)
 			continue
 		}
 		if r, ok := runtimesMap[rid]; !ok {
@@ -252,7 +253,7 @@ func (w *TaskWorker) reloadTaskItems() {
 			assignment.RequestedRuntimeId = ""
 			w.store.SetTaskAssignment(assignment)
 			w.store.IncreaseTaskItemsConfigVersion(w.strategyDefine.Id, w.taskDefine.Id)
-			logrus.Info("Release task item [", assignment.ItemId, "] for ", assignment.TaskId)
+			logrus.Info("Release task item [", assignment.ItemId, "] for ", assignment.TaskId, " to ", assignment.RuntimeId)
 			removedItems++
 			continue
 		}
@@ -265,7 +266,11 @@ func (w *TaskWorker) reloadTaskItems() {
 			newItems++
 		}
 	}
-	logrus.Info("Reload task items, ", newItems, " items added, ", removedItems, " items released")
+	if newItems+removedItems == 0 {
+		logrus.Info("Reload task items, no change")
+	} else {
+		logrus.Info("Reload task items, ", newItems, " items added, ", removedItems, " items released")
+	}
 }
 
 func (w *TaskWorker) schedule() {
@@ -273,7 +278,7 @@ func (w *TaskWorker) schedule() {
 	defer func() { w.notifierC <- 4 }()
 	for !w.needStop {
 		w.distributeTaskItems()
-		utils.Delay(w, 60*time.Millisecond)
+		utils.Delay(w, 10*time.Second)
 	}
 	assignments, err := w.store.GetTaskAssignments(w.strategyDefine.Id, w.taskDefine.Id)
 	if err != nil {
