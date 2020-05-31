@@ -28,13 +28,15 @@ func (m *SingleExecutor) execute(item interface{}) {
 	cost = int64(time.Now().Sub(t0) / time.Millisecond)
 }
 
-func (m *SingleExecutor) ExecuteOrReturn() {
+func (m *SingleExecutor) ExecuteOrReturn() bool {
 	select {
 	case item, ok := <-m.worker.data:
 		if ok {
 			m.execute(item)
 		}
+		return true
 	default:
+		return false
 	}
 }
 

@@ -16,15 +16,17 @@ func NewNormalModel(worker *TaskWorker) *NormalModel {
 }
 
 func (m *NormalModel) LoopOnce() {
-	if len(m.worker.data) < 1 {
-		defer atomic.AddInt32(&m.waiting, -1)
-		if atomic.AddInt32(&m.waiting, 1) == int32(m.worker.taskDefine.ExecutorCount) {
-			// Only last one can fetch new data
-			m.worker.selectOnce()
-		} else {
-			m.worker.executeOnceOrWait()
-		}
+	if m.worker.executeOnceOrReturn() {
 		return
 	}
-	m.worker.executeOnceOrWait()
+	// queue empty
+	cur := int(atomic.AddInt32(&m.waiting, 1))
+	defer atomic.AddInt32(&m.waiting, -1)
+	if cur == m.worker.taskDefine.ExecutorCount {
+		// Only last one can fetch new data
+		m.worker.selectOnce()
+	} else {
+		m.worker.executeOnceOrWait()
+	}
+	return
 }

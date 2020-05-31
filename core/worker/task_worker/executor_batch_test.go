@@ -24,7 +24,7 @@ func (demo *demoTaskBatch) Execute(task []interface{}, ownSign string) bool {
 
 func TestExecutorBatch(t *testing.T) {
 	demo := &demoTaskBatch{}
-	single := BatchExecutor{
+	batch := BatchExecutor{
 		worker: &TaskWorker{
 			data: make(chan interface{}, 100),
 			taskDefine: definition.Task{
@@ -38,24 +38,24 @@ func TestExecutorBatch(t *testing.T) {
 			},
 		},
 	}
-	single.worker.data <- 1
-	single.worker.data <- 2
-	single.worker.data <- 3
-	single.worker.data <- 4
-	single.worker.data <- 5
-	single.worker.data <- 6
-	single.worker.data <- 7
-	single.worker.data <- 8
-	single.worker.data <- 9
-	single.worker.data <- 10
+	batch.worker.data <- 1
+	batch.worker.data <- 2
+	batch.worker.data <- 3
+	batch.worker.data <- 4
+	batch.worker.data <- 5
+	batch.worker.data <- 6
+	batch.worker.data <- 7
+	batch.worker.data <- 8
+	batch.worker.data <- 9
+	batch.worker.data <- 10
 	demo.succ = true
-	single.ExecuteOrWait()
+	batch.ExecuteOrWait()
 	demo.succ = false
-	single.ExecuteOrReturn()
-	single.ExecuteOrReturn()
-	single.ExecuteOrReturn()
-	single.ExecuteOrReturn()
+	assert.True(t, batch.ExecuteOrReturn())
+	assert.False(t, batch.ExecuteOrReturn())
+	assert.False(t, batch.ExecuteOrReturn())
+	assert.False(t, batch.ExecuteOrReturn())
 
-	assert.Equal(t, int64(1), single.worker.Statistics.ExecuteSuccCount)
-	assert.Equal(t, int64(1), single.worker.Statistics.ExecuteFailCount)
+	assert.Equal(t, int64(1), batch.worker.Statistics.ExecuteSuccCount)
+	assert.Equal(t, int64(1), batch.worker.Statistics.ExecuteFailCount)
 }

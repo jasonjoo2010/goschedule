@@ -41,10 +41,10 @@ func (d *DemoHeartbeatTask) Execute(task interface{}, ownSign string) bool {
 func newTaskWorker() *TaskWorker {
 	RegisterTaskTypeName("demoHeartbeat", &DemoHeartbeatTask{})
 	manager, _ := core.New(memoryStore)
-	item1 := &definition.TaskItem{
+	item1 := definition.TaskItem{
 		Id: TEST_ITEM_ID1,
 	}
-	item2 := &definition.TaskItem{
+	item2 := definition.TaskItem{
 		Id: TEST_ITEM_ID2,
 	}
 	w, _ := NewTask(definition.Strategy{
@@ -61,7 +61,7 @@ func newTaskWorker() *TaskWorker {
 		ExecutorCount:     1,
 		HeartbeatInterval: 200,
 		DeathTimeout:      30000,
-		Items: []*definition.TaskItem{
+		Items: []definition.TaskItem{
 			item1,
 			item2,
 		},

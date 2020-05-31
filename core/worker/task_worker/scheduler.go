@@ -46,6 +46,18 @@ func (w *TaskWorker) clearExpiredRuntimes() ([]string, []*definition.TaskRuntime
 
 func (w *TaskWorker) getCurrentAssignments() (map[string]*definition.TaskAssignment, []*definition.TaskAssignment, []*runtimeAssign, error) {
 	assignments, err1 := w.store.GetTaskAssignments(w.strategyDefine.Id, w.taskDefine.Id)
+	shouldReload := false
+	// clear dirty task items first
+	for _, assign := range assignments {
+		if !utils.ContainsTaskItem(w.taskDefine.Items, assign.ItemId) {
+			w.store.RemoveTaskAssignment(w.strategyDefine.Id, w.taskDefine.Id, assign.ItemId)
+			logrus.Warn("Clear undefined task item: ", assign.ItemId)
+			shouldReload = true
+		}
+	}
+	if shouldReload {
+		assignments, _ = w.store.GetTaskAssignments(w.strategyDefine.Id, w.taskDefine.Id)
+	}
 	runtimes, err2 := w.store.GetTaskRuntimes(w.strategyDefine.Id, w.taskDefine.Id)
 	if err1 != nil || err2 != nil {
 		if err1 != nil {

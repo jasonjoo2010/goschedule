@@ -40,9 +40,9 @@ func TestExecutorSingle(t *testing.T) {
 	single.ExecuteOrWait()
 	demo.succ = false
 	single.ExecuteOrWait()
-	single.ExecuteOrReturn()
-	single.ExecuteOrReturn()
-	single.ExecuteOrReturn()
+	assert.True(t, single.ExecuteOrReturn())
+	assert.False(t, single.ExecuteOrReturn())
+	assert.False(t, single.ExecuteOrReturn())
 
 	assert.Equal(t, int64(3), single.worker.Statistics.ExecuteSuccCount)
 	assert.Equal(t, int64(2), single.worker.Statistics.ExecuteFailCount)

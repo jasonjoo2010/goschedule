@@ -43,7 +43,7 @@ type Task struct {
 	Model          Model
 	Parameter      string // Parameter of task
 	Bind           string // Binded to registry
-	Items          []*TaskItem
+	Items          []TaskItem
 	MaxTaskItems   int // max task items per Worker
 
 	// Interval of heartbeat, in millis

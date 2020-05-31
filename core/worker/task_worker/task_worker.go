@@ -243,6 +243,10 @@ func (w *TaskWorker) shouldRun() bool {
 	return false
 }
 
+func (w *TaskWorker) executeOnceOrReturn() bool {
+	return w.executor.ExecuteOrReturn()
+}
+
 func (w *TaskWorker) executeOnceOrWait() {
 	w.executor.ExecuteOrWait()
 }
@@ -268,6 +272,16 @@ func (w *TaskWorker) selectOnce() {
 			logrus.Error("Selecting error: ", r)
 		}
 	}()
+	// cron
+	if !w.shouldRun() {
+		utils.CronDelay(w, w.schedStart, w.schedEnd)
+		if w.needStop {
+			return
+		}
+		if w.schedStart != nil {
+			w.inCron = true
+		}
+	}
 	if len(w.queuedData) > 0 {
 		arr := w.queuedData
 		w.queuedData = nil
@@ -322,13 +336,6 @@ func (w *TaskWorker) loopOther() {
 	atomic.AddInt32(&w.executors, 1)
 	defer atomic.AddInt32(&w.executors, -1)
 	for {
-		// cron
-		if !w.shouldRun() {
-			utils.CronDelay(w, w.schedStart, w.schedEnd)
-			if w.needStop {
-				break
-			}
-		}
 		w.model.LoopOnce()
 		if w.needStop {
 			break
@@ -362,13 +369,6 @@ func (w *TaskWorker) loopMain() {
 		go w.loopOther()
 	}
 	for {
-		// cron
-		if !w.shouldRun() {
-			utils.CronDelay(w, w.schedStart, w.schedEnd)
-			if w.needStop {
-				break
-			}
-		}
 		w.model.LoopOnce()
 		if w.needStop {
 			break

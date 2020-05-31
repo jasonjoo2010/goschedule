@@ -30,7 +30,7 @@ func (m *BatchExecutor) execute(items []interface{}) {
 	cost = int64(time.Now().Sub(t0) / time.Millisecond)
 }
 
-func (m *BatchExecutor) ExecuteOrReturn() {
+func (m *BatchExecutor) ExecuteOrReturn() bool {
 	var (
 		ok   bool
 		item interface{}
@@ -38,7 +38,7 @@ func (m *BatchExecutor) ExecuteOrReturn() {
 	select {
 	case item, ok = <-m.worker.data:
 	default:
-		return
+		return false
 	}
 	if ok {
 		// try to fill arr
@@ -62,6 +62,7 @@ func (m *BatchExecutor) ExecuteOrReturn() {
 			m.pool.Put(items[:0])
 		}
 	}
+	return true
 }
 
 func (m *BatchExecutor) ExecuteOrWait() {
