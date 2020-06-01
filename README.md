@@ -1,6 +1,5 @@
 # GoSchedule
 
-===
 Distributed scheduling in golang.
 
 ## Introduction
