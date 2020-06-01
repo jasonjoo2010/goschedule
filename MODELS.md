@@ -6,10 +6,10 @@ NormalModel is designed for most cases. A select() will only be invoked when the
 
 As shown below:  
 
-[NormalModel](doc/model_normal.png)
+![NormalModel](doc/model_normal.png)
 
 StreamModel is designed for those cases which is focus on more efficient executing, or avoiding problem of barrel law, or non-strict consistent selecting. Things may become more complicated when you considerred logic of selecting.
 
 As shown below:  
 
-[StreamModel](doc/model_stream.png)
+![StreamModel](doc/model_stream.png)
