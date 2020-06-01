@@ -1,6 +1,7 @@
 package core
 
 import (
+	"context"
 	"errors"
 	"time"
 
@@ -195,7 +196,7 @@ func (s *ScheduleManager) adjustWorkers() {
 						logrus.Error("Can't create worker for: ", strategy.Id)
 						continue
 					}
-					w.Start(strategy.Id, strategy.Parameter)
+					go w.Start(strategy.Id, strategy.Parameter)
 					logrus.Info("Worker of strategy ", strategy.Id, " started")
 					workers = append(workers, w)
 				}
@@ -229,29 +230,50 @@ func (s *ScheduleManager) schedule() {
 }
 
 // stopWorkers stop group of workers binded to specific strategy
-func (s *ScheduleManager) stopWorkers(strategy *definition.Strategy) {
+func (s *ScheduleManager) stopWorkers(strategy *definition.Strategy) context.Context {
+	ctx, cancel := context.WithTimeout(context.Background(), s.ShutdownTimeout)
 	workers, ok := s.workersMap[strategy.Id]
 	if false == ok {
-		return
-	}
-	for _, w := range workers {
-		w.Stop(strategy.Id, strategy.Parameter)
+		cancel()
+		return ctx
 	}
 	delete(s.workersMap, strategy.Id)
+	// async stop
+	go func() {
+		var ctxArr []context.Context
+		for _, w := range workers {
+			subCtx, subCancel := context.WithTimeout(context.Background(), s.ShutdownTimeout)
+			go func() {
+				w.Stop(strategy.Id, strategy.Parameter)
+				subCancel()
+			}()
+			ctxArr = append(ctxArr, subCtx)
+		}
+		for _, subCtx := range ctxArr {
+			<-subCtx.Done()
+		}
+		cancel()
+	}()
+	return ctx
 }
 
 func (s *ScheduleManager) stopAllWorkers() {
+	var ctxArr []context.Context
 	for k := range s.workersMap {
 		strategy, _ := s.store.GetStrategy(k)
 		if strategy == nil {
 			logrus.Warn("Strategy not found: ", k)
-			s.stopWorkers(&definition.Strategy{
+			ctxArr = append(ctxArr, s.stopWorkers(&definition.Strategy{
 				Id:        k,
 				Parameter: "",
-			})
+			}))
 		} else {
-			s.stopWorkers(strategy)
+			ctxArr = append(ctxArr, s.stopWorkers(strategy))
 		}
+	}
+	// wait
+	for _, ctx := range ctxArr {
+		<-ctx.Done()
 	}
 }
 

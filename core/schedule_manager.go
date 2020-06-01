@@ -89,23 +89,28 @@ func (s *ScheduleManager) Shutdown() {
 		s.Started = false
 	}()
 
-	// wait for heartbeat
+	// wait for heartbeat and schedule loop
 	timeout := time.NewTimer(s.ShutdownTimeout)
-	select {
-	case <-s.shutdownNotifier: // heartbeat
-	case <-timeout.C:
-		logrus.Warn("Failed to stop heartbeat")
+	mask := 0
+	for mask != 3 {
+		select {
+		case val := <-s.shutdownNotifier:
+			mask |= val
+			switch val {
+			case 1:
+				logrus.Info("Heartbeat of manager stopped.")
+			case 2:
+				logrus.Info("Scheduling of manager stopped.")
+			default:
+				logrus.Warn("Unknow notification received: ", val)
+			}
+		case <-timeout.C:
+			logrus.Warn("Failed to stop heartbeat and scheduler of manager")
+		}
 	}
-
-	// wait for schedule loop
-	timeout.Reset(10 * time.Second)
-	select {
-	case <-s.shutdownNotifier: // schedule loop
-	case <-timeout.C:
-		logrus.Warn("Failed to stop schedule loop")
-	}
-	timeout.Stop()
 
 	s.cleanScheduler(s.scheduler.Id)
 	s.store.Close()
+
+	logrus.Info("Manager has been shutdown")
 }

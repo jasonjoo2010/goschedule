@@ -2,6 +2,7 @@ package core
 
 import (
 	"fmt"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -12,14 +13,50 @@ import (
 )
 
 type DemoWorker struct {
+	cnt int32
 }
 
 func (demo *DemoWorker) Start(strategyId, parameter string) {
+	time.Sleep(500 * time.Millisecond)
 	fmt.Println("start for", strategyId)
+	atomic.AddInt32(&demo.cnt, 1)
 }
 
 func (demo *DemoWorker) Stop(strategyId, parameter string) {
+	time.Sleep(500 * time.Millisecond)
 	fmt.Println("stop for", strategyId)
+	atomic.AddInt32(&demo.cnt, -1)
+}
+
+func TestStopAllWorkers(t *testing.T) {
+	// stop parellel
+	store := memory.New()
+	manager := newManager(t, store)
+	demo := &DemoWorker{}
+	worker.RegisterInstName("demoStopWorker", demo)
+	store.CreateStrategy(&definition.Strategy{
+		Id:      "s0",
+		IpList:  []string{"localhost"},
+		Enabled: true,
+		Kind:    definition.SimpleKind,
+		Bind:    "demoStopWorker",
+		Total:   50,
+	})
+	store.CreateStrategy(&definition.Strategy{
+		Id:      "s1",
+		IpList:  []string{"localhost"},
+		Enabled: true,
+		Kind:    definition.SimpleKind,
+		Bind:    "demoStopWorker",
+		Total:   50,
+	})
+	manager.registerInfo()
+	manager.generateRuntimes()
+	manager.schedule()
+	time.Sleep(time.Second)
+	assert.Equal(t, int32(100), demo.cnt)
+	manager.stopAllWorkers()
+	assert.Equal(t, int32(0), demo.cnt)
 }
 
 func TestLeader(t *testing.T) {
