@@ -26,6 +26,6 @@ Not supported.
 
 ![Cron Basic Rules](doc/cron_func.png)
 
-## ron for TaskWorker
+## Cron for TaskWorker
 
 ![Cron Basic Rules](doc/cron_task.png)
