@@ -48,7 +48,6 @@ func TestDelay(t *testing.T) {
 }
 
 func TestCronDelay(t *testing.T) {
-	demo := &DelayDemo{}
 	parser := cron.NewParser(cron.Second | cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow)
 	begin, _ := parser.Parse("0/3 * * * * ?")
 	end, _ := parser.Parse("1/3 * * * * ?")
@@ -60,29 +59,23 @@ func TestCronDelay(t *testing.T) {
 	if diff > 0 {
 		time.Sleep(diff)
 	}
-	t0 := time.Now()
-	CronDelay(demo, begin, nil)
-	t1 := time.Now()
-	assert.True(t, t1.Sub(t0) > 2500*time.Millisecond)
-	assert.True(t, t1.Sub(t0) < 3100*time.Millisecond)
+	delay := CronDelay(begin, nil)
+	assert.True(t, delay > 2500*time.Millisecond)
+	assert.True(t, delay < 3100*time.Millisecond)
 
 	now = time.Now()
 	diff = begin.Next(now).Sub(now) + 2*time.Millisecond
 	if diff > 0 {
 		time.Sleep(diff)
 	}
-	t0 = time.Now()
-	CronDelay(demo, begin, end)
-	t1 = time.Now()
-	assert.True(t, t1.Sub(t0) < 100*time.Millisecond)
+	delay = CronDelay(begin, end)
+	assert.True(t, delay == 0)
 
 	now = time.Now()
 	diff = end.Next(now).Sub(now) + 2*time.Millisecond
 	if diff > 0 {
 		time.Sleep(diff)
 	}
-	t0 = time.Now()
-	CronDelay(demo, begin, end)
-	t1 = time.Now()
-	assert.True(t, t1.Sub(t0) > 1900*time.Millisecond)
+	delay = CronDelay(begin, end)
+	assert.True(t, delay > 1900*time.Millisecond)
 }

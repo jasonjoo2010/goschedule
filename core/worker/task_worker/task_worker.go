@@ -51,6 +51,7 @@ type TaskComparable interface {
 //	Strategy.Bind should be the identifier of task(on console panel).
 type TaskWorker struct {
 	sync.Mutex
+	selectLock     sync.Mutex
 	parameter      string
 	ownSign        string
 	strategyDefine definition.Strategy
@@ -265,22 +266,35 @@ func (w *TaskWorker) fillOrQueued(arr []interface{}) {
 
 func (w *TaskWorker) selectOnce() {
 	// lock to block other routine from select concurrently (Especially in stream model)
-	w.Lock()
-	defer w.Unlock()
+	w.selectLock.Lock()
+	defer w.selectLock.Unlock()
 	defer func() {
 		if r := recover(); r != nil {
 			logrus.Error("Selecting error: ", r)
 		}
+		if w.needStop {
+			// notify blocking routines
+			close(w.data)
+		}
 	}()
 	// cron
 	if !w.shouldRun() {
-		utils.CronDelay(w, w.schedStart, w.schedEnd)
-		if w.needStop {
-			return
+		delay := utils.CronDelay(w.schedStart, w.schedEnd)
+		if delay > 0 {
+			next := time.Now().Unix()*1000 + int64(delay/time.Millisecond)
+			if next%1000 > 0 {
+				next = (next/1000 + 1) * 1000
+			}
+			w.NextBeginTime = next
+			utils.Delay(w, delay)
 		}
+		w.NextBeginTime = 0
 		if w.schedStart != nil {
 			w.inCron = true
 		}
+	}
+	if w.needStop {
+		return
 	}
 	if len(w.queuedData) > 0 {
 		arr := w.queuedData
@@ -348,7 +362,6 @@ func (w *TaskWorker) loopMain() {
 	atomic.AddInt32(&w.executors, 1)
 	defer func() {
 		atomic.AddInt32(&w.executors, -1)
-		close(w.data)
 		// empty the queue
 		for len(w.data) > 0 || len(w.queuedData) > 0 {
 			w.executor.ExecuteOrReturn()

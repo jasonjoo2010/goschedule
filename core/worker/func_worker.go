@@ -64,15 +64,18 @@ func (w *FuncWorker) NeedStop() bool {
 }
 
 func (w *FuncWorker) FuncExecutor() {
-	for {
+	for w.needStop == false {
 		// cron
-		utils.CronDelay(w, w.schedBegin, w.schedEnd)
-		w.fn(w.strategyId, w.parameter)
-		if w.interval > 0 {
-			utils.Delay(w, w.interval)
+		delay := utils.CronDelay(w.schedBegin, w.schedEnd)
+		if delay > 0 {
+			utils.Delay(w, delay)
 		}
 		if w.needStop {
 			break
+		}
+		w.fn(w.strategyId, w.parameter)
+		if w.interval > 0 {
+			utils.Delay(w, w.interval)
 		}
 	}
 	w.notifier <- 1

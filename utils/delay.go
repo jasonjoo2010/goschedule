@@ -60,13 +60,12 @@ func ParseStrategyCron(strategy *definition.Strategy) (cron.Schedule, cron.Sched
 //	b=====e------b=====e--------b=====e--------b=====e---
 //	   |==|
 //	         |-->|=====|        |=====|        |=====|
-func CronDelay(target DelaySupport, begin cron.Schedule, end cron.Schedule) {
+func CronDelay(begin cron.Schedule, end cron.Schedule) time.Duration {
 	if begin != nil && end == nil {
 		now := time.Now()
 		next := begin.Next(now)
 		diff := next.Sub(now)
-		Delay(target, diff)
-		return
+		return diff
 	}
 	if begin != nil && end != nil {
 		now := time.Now()
@@ -76,9 +75,9 @@ func CronDelay(target DelaySupport, begin cron.Schedule, end cron.Schedule) {
 		diff2 := next2.Sub(now)
 		if diff2 < diff1 {
 			// can running
-			return
+			return 0
 		}
-		Delay(target, diff1)
-		return
+		return diff1
 	}
+	return 0
 }
