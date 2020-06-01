@@ -35,11 +35,11 @@ func TestExecutorSingle(t *testing.T) {
 	single.worker.data <- 4
 	single.worker.data <- 5
 	demo.succ = true
-	single.ExecuteOrWait()
-	single.ExecuteOrWait()
-	single.ExecuteOrWait()
+	single.ExecuteOrReturn()
+	single.ExecuteOrReturn()
+	single.ExecuteOrReturn()
 	demo.succ = false
-	single.ExecuteOrWait()
+	single.ExecuteOrReturn()
 	assert.True(t, single.ExecuteOrReturn())
 	assert.False(t, single.ExecuteOrReturn())
 	assert.False(t, single.ExecuteOrReturn())

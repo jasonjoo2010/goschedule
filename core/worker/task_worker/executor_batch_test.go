@@ -49,7 +49,7 @@ func TestExecutorBatch(t *testing.T) {
 	batch.worker.data <- 9
 	batch.worker.data <- 10
 	demo.succ = true
-	batch.ExecuteOrWait()
+	batch.ExecuteOrReturn()
 	demo.succ = false
 	assert.True(t, batch.ExecuteOrReturn())
 	assert.False(t, batch.ExecuteOrReturn())

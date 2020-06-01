@@ -64,27 +64,3 @@ func (m *BatchExecutor) ExecuteOrReturn() bool {
 	}
 	return true
 }
-
-func (m *BatchExecutor) ExecuteOrWait() {
-	item, ok := <-m.worker.data
-	if ok {
-		// try to fill arr
-		items := m.pool.Get().([]interface{})
-		items = append(items, item)
-	LOOP:
-		for len(items) < m.worker.taskDefine.BatchCount {
-			select {
-			case item, ok = <-m.worker.data:
-				if ok {
-					items = append(items, item)
-				} else {
-					break LOOP
-				}
-			default:
-				break LOOP
-			}
-		}
-		m.execute(items)
-		m.pool.Put(items[:0])
-	}
-}

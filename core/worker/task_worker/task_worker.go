@@ -248,10 +248,6 @@ func (w *TaskWorker) executeOnceOrReturn() bool {
 	return w.executor.ExecuteOrReturn()
 }
 
-func (w *TaskWorker) executeOnceOrWait() {
-	w.executor.ExecuteOrWait()
-}
-
 func (w *TaskWorker) fillOrQueued(arr []interface{}) {
 	for i, obj := range arr {
 		select {
@@ -366,8 +362,8 @@ func (w *TaskWorker) loopMain() {
 		for len(w.data) > 0 || len(w.queuedData) > 0 {
 			w.executor.ExecuteOrReturn()
 			if len(w.data) == 0 && len(w.queuedData) > 0 {
-				w.queuedData = nil
 				arr := w.queuedData
+				w.queuedData = nil
 				w.fillOrQueued(arr)
 			}
 		}
@@ -409,6 +405,7 @@ func (w *TaskWorker) Stop(strategyId, parameter string) {
 	w.Lock()
 	defer w.Unlock()
 	w.needStop = true
+	w.model.Stop()
 	timeout := time.NewTimer(w.TimeoutShutdown)
 	mask := 0
 LOOP:

@@ -39,10 +39,3 @@ func (m *SingleExecutor) ExecuteOrReturn() bool {
 		return false
 	}
 }
-
-func (m *SingleExecutor) ExecuteOrWait() {
-	item, ok := <-m.worker.data
-	if ok {
-		m.execute(item)
-	}
-}
