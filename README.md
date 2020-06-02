@@ -154,6 +154,8 @@ And there are also several backends in roadmap:
 * Zookeeper
 * MySQL
 * Mongodb
+* etcd
+* nacos
 
 ## Extending
 
