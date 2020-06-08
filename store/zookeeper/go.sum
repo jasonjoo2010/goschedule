@@ -28,10 +28,10 @@ github.com/hpcloud/tail v1.0.0/go.mod h1:ab1qPbhIpdTxEkNHXyeSf5vhxWSCs/tWer42PpO
 github.com/jasonjoo2010/enhanced-utils v0.0.0-20200415090139-0a0c720ec8f3 h1:ezMwoW+PmybG8iTSwGs2t721mkgYKBXp5Z1yTUxaJsE=
 github.com/jasonjoo2010/enhanced-utils v0.0.0-20200415090139-0a0c720ec8f3/go.mod h1:u7jbH8cHV/qrM/1UuUtt++0AGthHQUWiNlYDbfJkCL8=
 github.com/jasonjoo2010/enhanced-utils v0.0.0-20200603160505-ca106040678a/go.mod h1:u7jbH8cHV/qrM/1UuUtt++0AGthHQUWiNlYDbfJkCL8=
-github.com/jasonjoo2010/enhanced-utils v0.0.0-20200608071141-0f10b99c6fe4 h1:P+Vcs9dZNKWSA7u7Gc7kb90WNGav+8JU64PhyG8Ks7g=
-github.com/jasonjoo2010/enhanced-utils v0.0.0-20200608071141-0f10b99c6fe4/go.mod h1:Tyst1QAaV1jHUoI2OA6+tuTMxx3rgaKf/fUTW4zOigA=
-github.com/jasonjoo2010/enhanced-utils/concurrent/distlock/zookeeper v0.0.0-20200608071141-0f10b99c6fe4 h1:7f2g8bVXFwetcqGLEaH9CvyBsd/SJPo22nVnhqSgKno=
-github.com/jasonjoo2010/enhanced-utils/concurrent/distlock/zookeeper v0.0.0-20200608071141-0f10b99c6fe4/go.mod h1:iLZbag3ZYA9npNqY6JRDousNpIlFDIk9wEIryL6e50g=
+github.com/jasonjoo2010/enhanced-utils v0.0.0-20200608114736-cca38f61401f h1:MuoQPuT8mAeqNtHDcrTUmscWjBic4JSKGAHcacUs7rU=
+github.com/jasonjoo2010/enhanced-utils v0.0.0-20200608114736-cca38f61401f/go.mod h1:Tyst1QAaV1jHUoI2OA6+tuTMxx3rgaKf/fUTW4zOigA=
+github.com/jasonjoo2010/enhanced-utils/concurrent/distlock/zookeeper v0.0.0-20200608114736-cca38f61401f h1:uea0URKoNGQUmPZC8yVLZKYzVTvO8n6cDnlkuxqFXFU=
+github.com/jasonjoo2010/enhanced-utils/concurrent/distlock/zookeeper v0.0.0-20200608114736-cca38f61401f/go.mod h1:iLZbag3ZYA9npNqY6JRDousNpIlFDIk9wEIryL6e50g=
 github.com/jasonjoo2010/go-zookeeper v0.0.0-20200604112349-1b6d20374ae8 h1:46cnncqYe9laAUx4DDbOJ8MFi9uNXh1+p/ncmbEZLms=
 github.com/jasonjoo2010/go-zookeeper v0.0.0-20200604112349-1b6d20374ae8/go.mod h1:coJfGgjfS8dwIP5Qwq2kcge8xfGWmQZInu9JE8G/wbg=
 github.com/jasonjoo2010/goschedule v0.0.0-20200603033023-3c4f75f11347 h1:fc0dwDfyB5IecpTy/wq105FTV7q2UtGKcDoPDop9P1I=
