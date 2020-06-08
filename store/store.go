@@ -41,7 +41,7 @@ type Store interface {
 	// Close the storage and it will never be use again
 	Close() error
 
-	Lock() *distlock.DistLock
+	Lock() distlock.DistLock
 
 	// scheduler
 	RegisterScheduler(scheduler *definition.Scheduler) error

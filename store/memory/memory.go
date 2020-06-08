@@ -22,7 +22,7 @@ import (
 type MemoryStore struct {
 	sequence        uint64
 	mutex           *sync.Mutex
-	lock            *distlock.DistLock
+	lock            distlock.DistLock
 	taskItemsConfig map[string]int64
 	tasks           map[string]*definition.Task
 	strategies      map[string]*definition.Strategy
@@ -72,7 +72,7 @@ func New() *MemoryStore {
 	}
 }
 
-func (s *MemoryStore) Lock() *distlock.DistLock {
+func (s *MemoryStore) Lock() distlock.DistLock {
 	return s.lock
 }
 

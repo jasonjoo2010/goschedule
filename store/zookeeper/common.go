@@ -8,20 +8,16 @@ import (
 	"container/list"
 	"strings"
 
-	"github.com/samuel/go-zookeeper/zk"
 	"github.com/sirupsen/logrus"
 )
 
 func (s *ZookeeperStore) exists(path string) bool {
-	_, _, err := s.conn.Get(path)
-	if err != nil && err.Error() == zk.ErrNoNode.Error() {
-		return false
-	}
+	result, _, err := s.conn.Exists(path)
 	if err != nil {
-		logrus.Warn("Failed to execute Get(", path, "): ", err.Error())
+		logrus.Warn("Failed to execute Exists(", path, "): ", err.Error())
 		return false
 	}
-	return true
+	return result && err == nil
 }
 
 func (s *ZookeeperStore) getChildren(path string, recursive bool) []string {
@@ -40,7 +36,9 @@ func (s *ZookeeperStore) getChildren(path string, recursive bool) []string {
 				continue
 			}
 			for _, child := range children {
-				result = append(result, p+"/"+child)
+				childPath := p + "/" + child
+				result = append(result, childPath)
+				queue.PushBack(childPath)
 			}
 		}
 		if !recursive {

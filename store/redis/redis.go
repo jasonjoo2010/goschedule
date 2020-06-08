@@ -41,7 +41,7 @@ type RedisStoreConfig struct {
 type RedisStore struct {
 	client redis.UniversalClient
 	prefix string
-	lock   *distlock.DistLock
+	lock   distlock.DistLock
 }
 
 func NewFromConfig(config *RedisStoreConfig) *RedisStore {
@@ -205,7 +205,7 @@ func (s *RedisStore) keySequence() string {
 	return s.key("sequence")
 }
 
-func (s *RedisStore) Lock() *distlock.DistLock {
+func (s *RedisStore) Lock() distlock.DistLock {
 	return s.lock
 }
 

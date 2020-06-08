@@ -43,4 +43,7 @@ func (s *ZookeeperStore) verifyPrefix() {
 			logrus.Error("Failed to initial base path: ", err.Error())
 		}
 	}
+	s.createPath(s.keySchedulers(), true)
+	s.createPath(s.keyTasks(), true)
+	s.createPath(s.keyStrategies(), true)
 }
