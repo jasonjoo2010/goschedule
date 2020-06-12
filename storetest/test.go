@@ -34,7 +34,7 @@ func DoTestSequence(t *testing.T, s store.Store) {
 	assert.True(t, s0 > 0)
 	assert.True(t, s1 > 0)
 	assert.True(t, s1 > s0)
-	assert.True(t, (s1-s0) == 1)
+	assert.True(t, (s1-s0) >= 1)
 }
 
 func DoTestTask(t *testing.T, s store.Store) {
