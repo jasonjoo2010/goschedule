@@ -148,14 +148,10 @@ Benefit of abstracting of storage kinds of backend can be easily supported:
 
 * Memory(Only for local testing or local usage scenario)
 * Redis
-
-And there are also several backends in roadmap:
-
+* Etcdv2
+* Etcdv3
+* Database
 * Zookeeper
-* MySQL
-* Mongodb
-* etcd
-* nacos
 
 ## Extending
 
