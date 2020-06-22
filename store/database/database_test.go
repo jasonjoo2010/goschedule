@@ -13,7 +13,7 @@ import (
 )
 
 func newStorage() *DatabaseStore {
-	db, err := sql.Open("mysql", "root@tcp(192.168.123.3:3306)/test")
+	db, err := sql.Open("mysql", "root@tcp(127.0.0.1:3306)/test")
 	if err != nil {
 		panic(err)
 	}
