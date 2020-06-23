@@ -312,7 +312,7 @@ func (s *Etcdv3Store) IncreaseTaskItemsConfigVersion(strategyId, taskId string) 
 		// initial
 		return nil
 	}
-	get_resp := resp.OpResponse().Get()
+	get_resp := resp.Responses[0].GetResponseRange()
 	if get_resp.Count < 1 {
 		return errors.New("Key create failed")
 	}
@@ -332,7 +332,7 @@ func (s *Etcdv3Store) IncreaseTaskItemsConfigVersion(strategyId, taskId string) 
 		if resp.Succeeded {
 			break
 		}
-		get_resp = resp.OpResponse().Get()
+		get_resp = resp.Responses[0].GetResponseRange()
 	}
 	return nil
 }
