@@ -9,7 +9,7 @@ require (
 	github.com/coreos/pkg v0.0.0-20180928190104-399ea9e2e55f // indirect
 	github.com/jasonjoo2010/enhanced-utils v0.0.1
 	github.com/jasonjoo2010/enhanced-utils/concurrent/distlock/etcdv3 v0.0.1
-	github.com/jasonjoo2010/goschedule v0.0.2
+	github.com/jasonjoo2010/goschedule v0.0.3
 	github.com/sirupsen/logrus v1.4.2
 	github.com/stretchr/testify v1.5.1
 	go.uber.org/zap v1.15.0 // indirect

@@ -24,11 +24,10 @@ github.com/golang/protobuf v1.3.1/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5y
 github.com/golang/protobuf v1.3.2/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U=
 github.com/google/go-cmp v0.4.0/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/gNBxE=
 github.com/google/uuid v1.1.1/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
-github.com/jasonjoo2010/enhanced-utils v0.0.0-20200612090800-12a448942204/go.mod h1:Tyst1QAaV1jHUoI2OA6+tuTMxx3rgaKf/fUTW4zOigA=
 github.com/jasonjoo2010/enhanced-utils v0.0.1 h1:6yZD6iXIQlRILxB1RSDAuG4rMGvT2yRDPjc26B/yPFY=
 github.com/jasonjoo2010/enhanced-utils v0.0.1/go.mod h1:Tyst1QAaV1jHUoI2OA6+tuTMxx3rgaKf/fUTW4zOigA=
-github.com/jasonjoo2010/goschedule v0.0.2 h1:ylz9KyRqVRKXthznFB0p7txDidSr8NXIp4y4/oKOqgY=
-github.com/jasonjoo2010/goschedule v0.0.2/go.mod h1:cFfu4uFiWJXDg/d6dCxXIMvNXc2Q6NIFCq0MohD6ROU=
+github.com/jasonjoo2010/goschedule v0.0.3 h1:+jSuenT4bJwuLSf9DVaNSWAzGz8m0yR2g0khctCeRnw=
+github.com/jasonjoo2010/goschedule v0.0.3/go.mod h1:J4NgCk1YvPyWSGYka8uMA8XETs/4BmSZHIwG2p/ox+I=
 github.com/json-iterator/go v1.1.6 h1:MrUvLMLTMxbqFJ9kzlvat/rYZqZnW3u4wkLzWTaFwKs=
 github.com/json-iterator/go v1.1.6/go.mod h1:+SdeFBvtyEkXs7REEP0seUULqWtbJapLOCVDaaPEHmU=
 github.com/julienschmidt/httprouter v1.2.0/go.mod h1:SYymIcj16QtmaHHD7aYtjjsJG7VTCxuUUipMqKk8s4w=
