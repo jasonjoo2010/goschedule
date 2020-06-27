@@ -247,10 +247,10 @@ func (s *ScheduleManager) stopWorkers(strategy *definition.Strategy) context.Con
 		var ctxArr []context.Context
 		for _, w := range workers {
 			subCtx, subCancel := context.WithTimeout(context.Background(), s.ShutdownTimeout)
-			go func() {
+			go func(w worker.Worker) {
 				w.Stop(strategy.Id, strategy.Parameter)
 				subCancel()
-			}()
+			}(w)
 			ctxArr = append(ctxArr, subCtx)
 		}
 		for _, subCtx := range ctxArr {
