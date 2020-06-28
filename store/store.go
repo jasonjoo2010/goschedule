@@ -7,7 +7,6 @@ package store
 import (
 	"errors"
 
-	"github.com/jasonjoo2010/enhanced-utils/concurrent/distlock"
 	"github.com/jasonjoo2010/goschedule/core/definition"
 )
 
@@ -40,8 +39,6 @@ type Store interface {
 
 	// Close the storage and it will never be use again
 	Close() error
-
-	Lock() distlock.DistLock
 
 	// scheduler
 	RegisterScheduler(scheduler *definition.Scheduler) error
