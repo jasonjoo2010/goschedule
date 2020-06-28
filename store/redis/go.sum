@@ -38,8 +38,8 @@ github.com/jasonjoo2010/enhanced-utils v0.0.1 h1:6yZD6iXIQlRILxB1RSDAuG4rMGvT2yR
 github.com/jasonjoo2010/enhanced-utils v0.0.1/go.mod h1:Tyst1QAaV1jHUoI2OA6+tuTMxx3rgaKf/fUTW4zOigA=
 github.com/jasonjoo2010/enhanced-utils/concurrent/distlock/redis v0.0.1 h1:687k/25v83IvVLOmWIv/NNjOo5HNk3RUsO1y72KlpyI=
 github.com/jasonjoo2010/enhanced-utils/concurrent/distlock/redis v0.0.1/go.mod h1:MZawqMMVlGDLYdSG5jXMN8fa1WWYC6Ptfdecrajl4sg=
-github.com/jasonjoo2010/goschedule v0.0.3 h1:+jSuenT4bJwuLSf9DVaNSWAzGz8m0yR2g0khctCeRnw=
-github.com/jasonjoo2010/goschedule v0.0.3/go.mod h1:J4NgCk1YvPyWSGYka8uMA8XETs/4BmSZHIwG2p/ox+I=
+github.com/jasonjoo2010/goschedule v0.1.0 h1:rY/QGdPXL/Qs1mwti7Eu9SUXNBh7N2WRpyRQp1FJ8uc=
+github.com/jasonjoo2010/goschedule v0.1.0/go.mod h1:J4NgCk1YvPyWSGYka8uMA8XETs/4BmSZHIwG2p/ox+I=
 github.com/json-iterator/go v1.1.6/go.mod h1:+SdeFBvtyEkXs7REEP0seUULqWtbJapLOCVDaaPEHmU=
 github.com/julienschmidt/httprouter v1.2.0/go.mod h1:SYymIcj16QtmaHHD7aYtjjsJG7VTCxuUUipMqKk8s4w=
 github.com/konsorten/go-windows-terminal-sequences v1.0.1/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
