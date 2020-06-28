@@ -4,7 +4,6 @@ go 1.14
 
 require (
 	github.com/google/uuid v1.1.1
-	github.com/jasonjoo2010/enhanced-utils v0.0.1
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/robfig/cron/v3 v3.0.0
 	github.com/sirupsen/logrus v1.4.2
