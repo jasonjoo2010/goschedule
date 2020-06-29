@@ -6,7 +6,7 @@ Distributed scheduling in golang.
 
 GoSchedule is an in-process scheduler. It's modularized, efficient, high available, parameterized, partition supported and extensible.  
 
-A web based console `goschedule-console` is provided as an easy to use operating panel to review runtimes/statistics, manage tasks/strategies/schedulers and manage data of storage.  
+A web based console [goschedule-console](https://github.com/jasonjoo2010/goschedule-console) is provided as an easy to use operating panel to review runtimes/statistics, manage tasks/strategies/schedulers and manage data of storage.  
 
 The first version of GoSchedule is implemented based on `tbschedule` which comes from Taobao®. Tbschedule became opensouce in 2011~2013 and stopped updating then. For an alternated please refer to [tbschedule](https://github.com/jasonjoo2010/tbschedule).  
 
