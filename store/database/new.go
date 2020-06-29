@@ -6,17 +6,13 @@ package database
 
 import (
 	"database/sql"
-	"time"
 
-	"github.com/jasonjoo2010/enhanced-utils/concurrent/distlock"
-	lockdb "github.com/jasonjoo2010/enhanced-utils/concurrent/distlock/database"
 	"github.com/jasonjoo2010/godao"
 	"github.com/jasonjoo2010/godao/options"
 )
 
 type ScheduleConfig struct {
 	InfoTable string
-	LockTable string
 }
 
 type Option func(cfg *ScheduleConfig)
@@ -34,12 +30,6 @@ func WithInfoTable(table string) Option {
 	}
 }
 
-func WithLockTable(table string) Option {
-	return func(cfg *ScheduleConfig) {
-		cfg.LockTable = table
-	}
-}
-
 func New(namespace string, db *sql.DB, opts ...Option) *DatabaseStore {
 	cfg := ScheduleConfig{}
 	for _, fn := range opts {
@@ -48,17 +38,11 @@ func New(namespace string, db *sql.DB, opts ...Option) *DatabaseStore {
 	if cfg.InfoTable == "" {
 		cfg.InfoTable = "schedule_info"
 	}
-	if cfg.LockTable == "" {
-		cfg.LockTable = "schedule_lock"
-	}
-
-	lockstore := lockdb.New(db, lockdb.WithTable(cfg.LockTable), lockdb.WithPrefix(namespace))
 
 	store := &DatabaseStore{
 		db:        db,
 		dao:       godao.NewDao(ScheduleInfo{}, db, options.WithTable(cfg.InfoTable)),
 		namespace: namespace,
-		lock:      distlock.NewMutex(namespace, 10*time.Second, lockstore),
 	}
 	return store
 }

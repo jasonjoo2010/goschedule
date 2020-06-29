@@ -2,20 +2,9 @@
 
 ## Initial Tables
 
-The first thing to do is to initial tables needed by `GoSchedule` and `Distributed lock` first.
+The first thing to do is to initial tables needed by `GoSchedule` first.
 
 ```sql
-CREATE TABLE `schedule_lock` (
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `key` varchar(100) NOT NULL DEFAULT '',
-  `value` varchar(100) NOT NULL DEFAULT '',
-  `version` bigint NOT NULL DEFAULT '0',
-  `created` bigint NOT NULL DEFAULT '0',
-  `expire` bigint NOT NULL DEFAULT '0',
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `key` (`key`)
-) ENGINE=InnoDB;
-
 CREATE TABLE `schedule_info` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `key` varchar(255) NOT NULL DEFAULT '',

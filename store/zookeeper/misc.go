@@ -5,7 +5,6 @@
 package zookeeper
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/samuel/go-zookeeper/zk"
@@ -14,7 +13,7 @@ import (
 
 func (s *ZookeeperStore) onEvent(event zk.Event) {
 	// should not block in this function because it's in synchronous mode
-	fmt.Println("recieve:", event)
+	logrus.Info("recieve: ", event)
 }
 
 func (s *ZookeeperStore) determineTimeDelta() {

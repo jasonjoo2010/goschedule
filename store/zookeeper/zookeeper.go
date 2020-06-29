@@ -10,8 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jasonjoo2010/enhanced-utils/concurrent/distlock"
-	lockzk "github.com/jasonjoo2010/enhanced-utils/concurrent/distlock/zookeeper"
 	"github.com/jasonjoo2010/goschedule/core/definition"
 	"github.com/jasonjoo2010/goschedule/store"
 	"github.com/samuel/go-zookeeper/zk"
@@ -31,7 +29,6 @@ type ZookeeperStoreConfig struct {
 
 type ZookeeperStore struct {
 	prefix    string
-	lock      distlock.DistLock
 	conn      *zk.Conn
 	acl       []zk.ACL
 	timeDelta time.Duration
@@ -82,17 +79,6 @@ CHECK_LOOP:
 	timeout.Stop()
 	s.verifyPrefix()
 	s.determineTimeDelta()
-	var lock_store distlock.Store
-	if config.Username != "" {
-		lock_store = lockzk.NewWithRootAcl(s.prefix,
-			"lock", 30_000,
-			config.Addrs,
-			&lockzk.ACL{config.Username, config.Password},
-		)
-	} else {
-		lock_store = lockzk.NewWithRoot(s.prefix, "lock", 30_000, config.Addrs)
-	}
-	s.lock = distlock.NewMutex("lock", 30_000, lock_store)
 	return s
 }
 
@@ -126,10 +112,6 @@ func (s *ZookeeperStore) Close() error {
 	s.conn.Close()
 	s.conn = nil
 	return nil
-}
-
-func (s *ZookeeperStore) Lock() distlock.DistLock {
-	return s.lock
 }
 
 func (s *ZookeeperStore) keyScheduler(id string) string {

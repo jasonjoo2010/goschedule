@@ -12,8 +12,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/jasonjoo2010/enhanced-utils/concurrent/distlock"
-	lockstore "github.com/jasonjoo2010/enhanced-utils/concurrent/distlock/mock"
 	"github.com/jasonjoo2010/goschedule/core/definition"
 	"github.com/jasonjoo2010/goschedule/store"
 	"github.com/jasonjoo2010/goschedule/utils"
@@ -22,7 +20,6 @@ import (
 type MemoryStore struct {
 	sequence        uint64
 	mutex           *sync.Mutex
-	lock            distlock.DistLock
 	taskItemsConfig map[string]int64
 	tasks           map[string]*definition.Task
 	strategies      map[string]*definition.Strategy
@@ -61,7 +58,6 @@ func (r *taskRuntimeKey) String() string {
 func New() *MemoryStore {
 	return &MemoryStore{
 		mutex:           &sync.Mutex{},
-		lock:            distlock.NewMutex("", 60*time.Second, lockstore.New()),
 		tasks:           make(map[string]*definition.Task),
 		strategies:      make(map[string]*definition.Strategy),
 		schedulers:      make(map[string]*definition.Scheduler),
@@ -70,10 +66,6 @@ func New() *MemoryStore {
 		taskAssignments: make(map[taskRuntimeKey]*definition.TaskAssignment),
 		taskItemsConfig: make(map[string]int64),
 	}
-}
-
-func (s *MemoryStore) Lock() distlock.DistLock {
-	return s.lock
 }
 
 func (s *MemoryStore) Name() string {

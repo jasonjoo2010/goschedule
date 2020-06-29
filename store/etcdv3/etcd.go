@@ -15,7 +15,6 @@ import (
 	"time"
 
 	etcd "github.com/coreos/etcd/clientv3"
-	"github.com/jasonjoo2010/enhanced-utils/concurrent/distlock"
 	"github.com/jasonjoo2010/goschedule/core/definition"
 	"github.com/jasonjoo2010/goschedule/store"
 	"github.com/sirupsen/logrus"
@@ -26,7 +25,6 @@ type Etcdv3Store struct {
 	kvApi    etcd.KV
 	leaseApi etcd.Lease
 	prefix   string
-	lock     distlock.DistLock
 	stopped  bool
 }
 
@@ -146,13 +144,8 @@ func (s *Etcdv3Store) Close() error {
 		return nil
 	}
 	s.stopped = true
-	s.lock.Close()
 	s.client.Close()
 	return nil
-}
-
-func (s *Etcdv3Store) Lock() distlock.DistLock {
-	return s.lock
 }
 
 func (s *Etcdv3Store) RegisterScheduler(scheduler *definition.Scheduler) error {

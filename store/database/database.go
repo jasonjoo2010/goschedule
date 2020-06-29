@@ -13,7 +13,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jasonjoo2010/enhanced-utils/concurrent/distlock"
 	"github.com/jasonjoo2010/godao"
 	"github.com/jasonjoo2010/godao/options"
 	"github.com/jasonjoo2010/godao/types"
@@ -26,7 +25,6 @@ type DatabaseStore struct {
 	db        *sql.DB
 	dao       *godao.Dao
 	namespace string
-	lock      distlock.DistLock
 }
 
 func (s *DatabaseStore) keySequence() string {
@@ -177,10 +175,6 @@ func (s *DatabaseStore) Sequence() (uint64, error) {
 func (s *DatabaseStore) Close() error {
 	// nothing to do
 	return nil
-}
-
-func (s *DatabaseStore) Lock() distlock.DistLock {
-	return s.lock
 }
 
 func (s *DatabaseStore) RegisterScheduler(scheduler *definition.Scheduler) error {

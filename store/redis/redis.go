@@ -14,8 +14,6 @@ import (
 	"time"
 
 	"github.com/go-redis/redis"
-	"github.com/jasonjoo2010/enhanced-utils/concurrent/distlock"
-	lockstore "github.com/jasonjoo2010/enhanced-utils/concurrent/distlock/redis"
 	"github.com/jasonjoo2010/goschedule/core/definition"
 	"github.com/jasonjoo2010/goschedule/store"
 	"github.com/jasonjoo2010/goschedule/utils"
@@ -41,7 +39,6 @@ type RedisStoreConfig struct {
 type RedisStore struct {
 	client redis.UniversalClient
 	prefix string
-	lock   distlock.DistLock
 }
 
 func NewFromConfig(config *RedisStoreConfig) *RedisStore {
@@ -59,7 +56,6 @@ func NewFromConfig(config *RedisStoreConfig) *RedisStore {
 	return &RedisStore{
 		client: client,
 		prefix: config.Prefix,
-		lock:   distlock.NewMutex(config.Prefix, 60*time.Second, lockstore.New(config.Addrs)),
 	}
 }
 
@@ -203,10 +199,6 @@ func (s *RedisStore) keyTaskAssignments(strategyId, taskId string) string {
 
 func (s *RedisStore) keySequence() string {
 	return s.key("sequence")
-}
-
-func (s *RedisStore) Lock() distlock.DistLock {
-	return s.lock
 }
 
 func (s *RedisStore) Name() string {

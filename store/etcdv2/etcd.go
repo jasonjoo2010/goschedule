@@ -15,7 +15,6 @@ import (
 	"time"
 
 	etcd "github.com/coreos/etcd/client"
-	"github.com/jasonjoo2010/enhanced-utils/concurrent/distlock"
 	"github.com/jasonjoo2010/goschedule/core/definition"
 	"github.com/jasonjoo2010/goschedule/store"
 	"github.com/sirupsen/logrus"
@@ -150,11 +149,6 @@ func (s *Etcdv2Store) Sequence() (uint64, error) {
 }
 
 func (s *Etcdv2Store) Close() error {
-	return nil
-}
-
-func (s *Etcdv2Store) Lock() distlock.DistLock {
-	//TODO
 	return nil
 }
 
