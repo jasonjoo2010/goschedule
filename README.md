@@ -155,4 +155,4 @@ Benefit of abstracting of storage kinds of backend can be easily supported:
 
 ## Extending
 
-New storage backend and new worker can be extended through interface `store.Store` and `worker.Worker`.
+New storage backend and new worker can be extended through interface `store.Store` and `types.Worker`.

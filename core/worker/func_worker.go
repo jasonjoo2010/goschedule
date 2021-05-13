@@ -5,52 +5,51 @@
 package worker
 
 import (
+	"context"
 	"errors"
 	"strconv"
 	"sync"
 	"time"
 
 	"github.com/jasonjoo2010/goschedule/core/definition"
+	"github.com/jasonjoo2010/goschedule/log"
+	"github.com/jasonjoo2010/goschedule/types"
 	"github.com/jasonjoo2010/goschedule/utils"
 	"github.com/robfig/cron/v3"
-	"github.com/sirupsen/logrus"
 )
 
-// FuncInterface defines the func used in scheduling.
-//	Generally it's better keeping invocation fast but if it costs much more time
-//	maybe you should carefully set a suitable timeout during shutdown.
-type FuncInterface func(strategyId, parameter string)
-
-// FuncWorker uses a func to implement a task loop. A channel is used to do nififications(ping-pong).
+// FuncWorker uses a func to implement a task loop. A channel is used to do notifications(ping-pong).
 type FuncWorker struct {
-	sync.Mutex
+	types.Worker
+
+	mu        sync.Mutex
+	wg        sync.WaitGroup
+	ctx       context.Context
+	ctxCancel context.CancelFunc
+
 	strategyId string
 	parameter  string
-	notifier   chan int
-	fn         FuncInterface
+	fn         types.FuncInterface
+
 	schedBegin cron.Schedule
 	schedEnd   cron.Schedule
 	interval   time.Duration
-	started    bool
-	needStop   bool
-
-	// TimeoutShutdown is the timeout when waiting to close the worker
-	TimeoutShutdown time.Duration
 }
 
-func NewFunc(strategy definition.Strategy) (Worker, error) {
+func NewFunc(strategy definition.Strategy) (types.Worker, error) {
 	if strategy.Kind != definition.FuncKind {
 		return nil, errors.New("Wrong kind of strategy, should be FuncKind")
 	}
+
 	fn := GetFunc(strategy.Bind)
 	if fn == nil {
 		return nil, errors.New("Could not get the binding func")
 	}
+
 	w := &FuncWorker{
-		notifier:        make(chan int),
-		TimeoutShutdown: 10 * time.Second,
-		fn:              fn,
+		fn: fn,
 	}
+
 	w.schedBegin, w.schedEnd = utils.ParseStrategyCron(&strategy)
 	if strategy.Extra != nil {
 		if millisStr, ok := strategy.Extra["Interval"]; ok {
@@ -59,57 +58,63 @@ func NewFunc(strategy definition.Strategy) (Worker, error) {
 			}
 		}
 	}
-	logrus.Info("Create a func worker, cron=", w.schedBegin, ", interval=", w.interval/time.Millisecond)
+
+	log.Infof("Create a func worker, cron=%v, interval=%v", w.schedBegin, w.interval)
 	return w, nil
 }
 
-func (w *FuncWorker) NeedStop() bool {
-	return w.needStop
-}
+func (w *FuncWorker) FuncExecutor(ctx context.Context) {
+	defer w.wg.Done()
 
-func (w *FuncWorker) FuncExecutor() {
-	for w.needStop == false {
+LOOP:
+	for {
 		// cron
 		delay := utils.CronDelay(w.schedBegin, w.schedEnd)
-		if delay > 0 {
-			utils.Delay(w, delay)
+		if !utils.DelayContext(ctx, delay) {
+			break LOOP
 		}
-		if w.needStop {
-			break
-		}
+
 		w.fn(w.strategyId, w.parameter)
-		if w.interval > 0 {
-			utils.Delay(w, w.interval)
+
+		if !utils.DelayContext(ctx, w.interval) {
+			break LOOP
 		}
 	}
-	w.notifier <- 1
-	w.started = false
-	w.needStop = false
 }
 
-func (w *FuncWorker) Start(strategyId, parameter string) {
-	w.Lock()
-	defer w.Unlock()
-	if w.started {
-		logrus.Warn("Worker has already started, ignore")
-		return
+func (w *FuncWorker) Start(strategyId, parameter string) error {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	if w.ctx != nil {
+		return errors.New("Worker has already started")
 	}
-	w.started = true
+
+	w.ctx, w.ctxCancel = context.WithCancel(context.Background())
 	w.strategyId = strategyId
 	w.parameter = parameter
-	go w.FuncExecutor()
+
+	w.wg.Add(1)
+	go w.FuncExecutor(w.ctx)
+	return nil
 }
 
-func (w *FuncWorker) Stop(strategyId, parameter string) {
-	w.needStop = true
-	timeout := time.NewTimer(w.TimeoutShutdown)
-	select {
-	case <-w.notifier:
-		// succ
-		timeout.Stop()
-	case <-timeout.C:
-		// timeout
-		logrus.Error("Failed to stop a FuncWorker")
+func (w *FuncWorker) cleanup() {
+	w.ctx = nil
+	w.ctxCancel = nil
+}
+
+func (w *FuncWorker) Stop(strategyId, parameter string) error {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	if w.ctx == nil {
+		return errors.New("Func worker has not been started")
 	}
-	logrus.Info("Worker of strategy ", strategyId, " stopped")
+	defer w.cleanup()
+
+	w.ctxCancel()
+	w.wg.Wait()
+	log.Infof("Worker of strategy %s stopped", strategyId)
+	return nil
 }

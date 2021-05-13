@@ -289,13 +289,7 @@ func (w *TaskWorker) reloadTaskItems() {
 	}
 }
 
-func (w *TaskWorker) schedule() {
-	// stop handler
-	defer func() { w.notifierC <- 4 }()
-	for !w.needStop {
-		w.distributeTaskItems()
-		utils.Delay(w, 10*time.Second)
-	}
+func (w *TaskWorker) cleanupSchedule() {
 	assignments, err := w.store.GetTaskAssignments(w.strategyDefine.Id, w.taskDefine.Id)
 	if err != nil {
 		logrus.Warn("Fetch assignments failed: ", err.Error())

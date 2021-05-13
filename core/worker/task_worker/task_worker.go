@@ -5,6 +5,7 @@
 package task_worker
 
 import (
+	"context"
 	"errors"
 	"reflect"
 	"sync"
@@ -12,8 +13,9 @@ import (
 	"time"
 
 	"github.com/jasonjoo2010/goschedule/core/definition"
-	"github.com/jasonjoo2010/goschedule/core/worker"
+	"github.com/jasonjoo2010/goschedule/log"
 	"github.com/jasonjoo2010/goschedule/store"
+	"github.com/jasonjoo2010/goschedule/types"
 	"github.com/jasonjoo2010/goschedule/utils"
 	"github.com/robfig/cron/v3"
 	"github.com/sirupsen/logrus"
@@ -54,7 +56,7 @@ type TaskComparable interface {
 // TaskWorker implements a task-driven worker.
 //	Strategy.Bind should be the identifier of task(on console panel).
 type TaskWorker struct {
-	sync.Mutex
+	mu             sync.Mutex
 	selectLock     sync.Mutex
 	parameter      string
 	ownSign        string
@@ -65,7 +67,7 @@ type TaskWorker struct {
 	noItemsCycles  int
 	store          store.Store
 	runtime        definition.TaskRuntime
-	notifierC      chan int
+	wg             sync.WaitGroup
 	data           chan interface{}
 	queuedData     []interface{}
 	model          TaskModel
@@ -77,15 +79,14 @@ type TaskWorker struct {
 	interval       time.Duration
 	intervalNoData time.Duration
 	inCron         bool // Flagged indicating schedStart was triggered
-	started        bool
-	needStop       bool
+
+	ctx       context.Context
+	ctxCancel context.CancelFunc
+	running   bool
 
 	// statistics
 	NextBeginTime int64
 	Statistics    definition.Statistics
-
-	// TimeoutShutdown is the timeout when waiting to close the worker
-	TimeoutShutdown time.Duration
 }
 
 func getTaskFromType(t reflect.Type) TaskBase {
@@ -151,7 +152,7 @@ func RegisterTaskInstName(name string, task TaskBase) {
 
 // NewTask creates a new task and initials necessary fields
 //	Please don't initial TaskWorker manually
-func NewTask(strategy definition.Strategy, task definition.Task, store store.Store, schedulerId string) (worker.Worker, error) {
+func NewTask(strategy definition.Strategy, task definition.Task, store store.Store, schedulerId string) (types.Worker, error) {
 	var inst TaskBase
 	sequence, err := store.Sequence()
 	if err != nil {
@@ -165,16 +166,14 @@ func NewTask(strategy definition.Strategy, task definition.Task, store store.Sto
 	}
 	logrus.Info("New task ", task.Id, " created")
 	w := &TaskWorker{
-		notifierC:       make(chan int),
-		data:            make(chan interface{}, utils.Max(10, task.FetchCount*len(task.Items)*2)),
-		TimeoutShutdown: 10 * time.Second,
-		task:            inst,
-		strategyDefine:  strategy,
-		ownSign:         utils.OwnSign(strategy.Id),
-		taskDefine:      task,
-		taskItems:       make([]definition.TaskItem, 0),
-		parameter:       task.Parameter,
-		store:           store,
+		data:           make(chan interface{}, utils.Max(10, task.FetchCount*len(task.Items)*2)),
+		task:           inst,
+		strategyDefine: strategy,
+		ownSign:        utils.OwnSign(strategy.Id),
+		taskDefine:     task,
+		taskItems:      make([]definition.TaskItem, 0),
+		parameter:      task.Parameter,
+		store:          store,
 		runtime: definition.TaskRuntime{
 			Id:            utils.GenerateUUID(sequence),
 			Version:       1,
@@ -230,10 +229,6 @@ func NewTask(strategy definition.Strategy, task definition.Task, store store.Sto
 	return w, nil
 }
 
-func (w *TaskWorker) NeedStop() bool {
-	return w.needStop
-}
-
 // shouldRun returns false when it cannot decide the result
 func (w *TaskWorker) shouldRun() bool {
 	if w.schedStart == nil {
@@ -272,7 +267,7 @@ func (w *TaskWorker) selectOnce() {
 		if r := recover(); r != nil {
 			logrus.Error("Selecting error: ", r)
 		}
-		if w.needStop {
+		if utils.ContextDone(w.ctx) {
 			// notify blocking routines
 			close(w.data)
 		}
@@ -286,16 +281,18 @@ func (w *TaskWorker) selectOnce() {
 				next = (next/1000 + 1) * 1000
 			}
 			w.NextBeginTime = next
-			utils.Delay(w, delay)
+			utils.DelayContext(w.ctx, delay)
 		}
 		w.NextBeginTime = 0
 		if w.schedStart != nil {
 			w.inCron = true
 		}
 	}
-	if w.needStop {
+
+	if utils.ContextDone(w.ctx) {
 		return
 	}
+
 	if len(w.queuedData) > 0 {
 		arr := w.queuedData
 		w.queuedData = nil
@@ -324,7 +321,7 @@ func (w *TaskWorker) selectOnce() {
 			logrus.Warn("Cannot get any task item after quite a long time.")
 			w.noItemsCycles = 0
 		}
-		utils.Delay(w, time.Duration(w.taskDefine.HeartbeatInterval)*time.Millisecond)
+		utils.DelayContext(w.ctx, time.Duration(w.taskDefine.HeartbeatInterval)*time.Millisecond)
 		return
 	}
 	w.noItemsCycles = 0
@@ -334,15 +331,15 @@ func (w *TaskWorker) selectOnce() {
 	if arr_size < 1 {
 		w.inCron = false
 		if w.intervalNoData > 0 {
-			utils.Delay(w, w.intervalNoData)
+			utils.DelayContext(w.ctx, w.intervalNoData)
 		} else if w.interval > 0 {
-			utils.Delay(w, w.interval)
+			utils.DelayContext(w.ctx, w.interval)
 		}
 		return
 	}
 	w.fillOrQueued(arr)
 	if w.interval > 0 {
-		utils.Delay(w, w.interval)
+		utils.DelayContext(w.ctx, w.interval)
 	}
 }
 
@@ -351,84 +348,99 @@ func (w *TaskWorker) loopOther() {
 	defer atomic.AddInt32(&w.executors, -1)
 	for {
 		w.model.LoopOnce()
-		if w.needStop {
+		if utils.ContextDone(w.ctx) {
 			break
 		}
 	}
 }
 
+func (w *TaskWorker) consumeRemained() {
+	// empty the queue
+	for len(w.data) > 0 || len(w.queuedData) > 0 {
+		w.executor.ExecuteOrReturn()
+		if len(w.data) == 0 && len(w.queuedData) > 0 {
+			arr := w.queuedData
+			w.queuedData = nil
+			w.fillOrQueued(arr)
+		}
+	}
+}
+
 // main loop(outer)
-func (w *TaskWorker) loopMain() {
-	atomic.AddInt32(&w.executors, 1)
+func (w *TaskWorker) loopMain(ctx context.Context) {
+	defer w.wg.Done()
 	defer func() {
 		atomic.AddInt32(&w.executors, -1)
-		// empty the queue
-		for len(w.data) > 0 || len(w.queuedData) > 0 {
-			w.executor.ExecuteOrReturn()
-			if len(w.data) == 0 && len(w.queuedData) > 0 {
-				arr := w.queuedData
-				w.queuedData = nil
-				w.fillOrQueued(arr)
-			}
-		}
-		// wait executors
+		w.consumeRemained()
+
+		// wait for other executors
 		for w.executors > 0 {
 			time.Sleep(10 * time.Millisecond)
 		}
-		w.notifierC <- 1
 	}()
+
+	atomic.AddInt32(&w.executors, 1)
 	// create other executors
 	for i := 1; i < w.taskDefine.ExecutorCount; i++ {
 		go w.loopOther()
 	}
 	for {
 		w.model.LoopOnce()
-		if w.needStop {
+		if utils.ContextDone(ctx) {
 			break
 		}
 	}
 }
 
-func (w *TaskWorker) Start(strategyId, parameter string) {
-	w.Lock()
-	defer w.Unlock()
-	if w.started {
-		logrus.Warn("Task Worker has already started, ignore")
-		return
+func (w *TaskWorker) Start(strategyId, parameter string) error {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	if w.ctx != nil {
+		return errors.New("Task Worker has already started")
 	}
-	w.started = true
+	select {
+	case <-w.ctx.Done():
+		return errors.New("Task worker has already stopped")
+	default:
+	}
 	if parameter != "" {
 		w.parameter = parameter
 	}
-	go w.loopMain()
-	go w.heartbeat()
-	go w.schedule()
+
+	w.ctx, w.ctxCancel = context.WithCancel(context.Background())
+	w.wg.Add(3)
+	go w.loopMain(w.ctx)
+
+	// heartbeat loop
+	go utils.LoopContext(w.ctx,
+		time.Duration(w.taskDefine.HeartbeatInterval)*time.Millisecond,
+		w.registerTaskRuntime,
+		func() {
+			defer w.wg.Done()
+			defer w.store.RemoveTaskRuntime(w.runtime.StrategyId, w.runtime.TaskId, w.runtime.Id)
+		})
+
+	// schedule loop
+	go utils.LoopContext(w.ctx,
+		10*time.Second,
+		w.distributeTaskItems,
+		func() {
+			defer w.wg.Done()
+			defer w.cleanupSchedule()
+		})
+	return nil
 }
 
-func (w *TaskWorker) Stop(strategyId, parameter string) {
-	w.Lock()
-	defer w.Unlock()
-	w.needStop = true
-	w.model.Stop()
-	timeout := time.NewTimer(w.TimeoutShutdown)
-	mask := 0
-LOOP:
-	for {
-		select {
-		case v := <-w.notifierC:
-			mask |= v
-			if mask == 7 {
-				// succ
-				timeout.Stop()
-				break LOOP
-			}
-		case <-timeout.C:
-			// timeout
-			logrus.Error("Failed to stop a TaskWorker")
-			break LOOP
-		}
+func (w *TaskWorker) Stop(strategyId, parameter string) error {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	if utils.ContextDone(w.ctx) {
+		return errors.New("The task worker has been closed")
 	}
-	w.started = false
-	w.needStop = false
-	logrus.Info("Worker of strategy ", strategyId, " stopped")
+
+	w.ctxCancel()
+	w.model.Stop()
+	w.wg.Wait()
+	log.Infof("Worker of strategy %s stopped", strategyId)
+	return nil
 }

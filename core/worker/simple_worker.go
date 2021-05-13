@@ -8,15 +8,16 @@ import (
 	"errors"
 
 	"github.com/jasonjoo2010/goschedule/core/definition"
-	"github.com/sirupsen/logrus"
+	"github.com/jasonjoo2010/goschedule/log"
+	"github.com/jasonjoo2010/goschedule/types"
 )
 
-func NewSimple(strategy definition.Strategy) (Worker, error) {
+func NewSimple(strategy definition.Strategy) (types.Worker, error) {
 	w := GetWorker(strategy.Bind)
 	if w == nil {
-		logrus.Warn("Fetch simple worker failed for ", strategy.Bind)
+		log.Warnf("Fetch simple worker failed for %s", strategy.Bind)
 		return nil, errors.New("No specific worker found: " + strategy.Bind)
 	}
-	logrus.Info("Worker of strategy ", strategy.Id, " created")
+	log.Infof("Worker of strategy %s created", strategy.Id)
 	return w, nil
 }

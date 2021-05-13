@@ -9,34 +9,29 @@ import (
 	"reflect"
 	"sync"
 
+	"github.com/jasonjoo2010/goschedule/types"
 	"github.com/jasonjoo2010/goschedule/utils"
 	"github.com/sirupsen/logrus"
 )
-
-// Worker manages data of scheduling for binded strategy
-type Worker interface {
-	Start(strategyId, parameter string)
-	Stop(strategyId, parameter string)
-}
 
 var (
 	registryMap sync.Map
 )
 
-func getWorkerFromType(t reflect.Type) Worker {
-	if v, ok := reflect.New(t).Interface().(Worker); ok {
+func getWorkerFromType(t reflect.Type) types.Worker {
+	if v, ok := reflect.New(t).Interface().(types.Worker); ok {
 		return v
 	}
 	logrus.Warn("Entry registered is not a convertable type: ", t)
 	return nil
 }
 
-func GetWorker(name string) Worker {
+func GetWorker(name string) types.Worker {
 	var (
 		ok bool
 		v  interface{}
 		t  reflect.Type
-		w  Worker
+		w  types.Worker
 	)
 	if v, ok = registryMap.Load(name); !ok {
 		logrus.Warn("No type registered for key: ", name)
@@ -46,7 +41,7 @@ func GetWorker(name string) Worker {
 	if ok {
 		return getWorkerFromType(t)
 	}
-	w, ok = v.(Worker)
+	w, ok = v.(types.Worker)
 	if ok {
 		return w
 	}
@@ -54,10 +49,10 @@ func GetWorker(name string) Worker {
 	return nil
 }
 
-func GetFunc(name string) FuncInterface {
+func GetFunc(name string) types.FuncInterface {
 	if v, ok := registryMap.Load(name); ok {
 		fmt.Println()
-		if fn, ok := v.(FuncInterface); ok {
+		if fn, ok := v.(types.FuncInterface); ok {
 			return fn
 		}
 		logrus.Warn("Func registered for key: ", name, " is in incorrect type")
@@ -68,7 +63,7 @@ func GetFunc(name string) FuncInterface {
 }
 
 // Register registers specific type with its full package path as key
-func Register(worker Worker) {
+func Register(worker types.Worker) {
 	if worker == nil {
 		panic("Could not register a worker type using nil as value")
 	}
@@ -76,7 +71,7 @@ func Register(worker Worker) {
 }
 
 // RegisterName registers specific type with specific name as key
-func RegisterName(name string, worker Worker) {
+func RegisterName(name string, worker types.Worker) {
 	if name == "" {
 		panic("Could not register a worker type without name")
 	}
@@ -89,18 +84,18 @@ func RegisterName(name string, worker Worker) {
 }
 
 // RegisterInst registers an instance provided instead of its type
-func RegisterInst(worker Worker) {
+func RegisterInst(worker types.Worker) {
 	RegisterInstName(utils.TypeName(worker), worker)
 }
 
 // RegisterInstName registers an instance with given name
-func RegisterInstName(name string, worker Worker) {
+func RegisterInstName(name string, worker types.Worker) {
 	registryMap.Store(name, worker)
 	logrus.Info("Register a worker instance: ", name)
 }
 
 // RegisterFunc registers func worker into registry which could be fetch through GetFunc(name string)
-func RegisterFunc(name string, fn FuncInterface) {
+func RegisterFunc(name string, fn types.FuncInterface) {
 	registryMap.Store(name, fn)
 	logrus.Info("Register new worker func: ", name)
 }

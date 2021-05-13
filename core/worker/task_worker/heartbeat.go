@@ -6,8 +6,6 @@ package task_worker
 
 import (
 	"time"
-
-	"github.com/jasonjoo2010/goschedule/utils"
 )
 
 func (w *TaskWorker) registerTaskRuntime() {
@@ -17,14 +15,4 @@ func (w *TaskWorker) registerTaskRuntime() {
 	w.runtime.Version++
 	w.runtime.Statistics = w.Statistics
 	w.store.SetTaskRuntime(&w.runtime)
-}
-
-func (w *TaskWorker) heartbeat() {
-	// stop handler
-	defer func() { w.notifierC <- 2 }()
-	for !w.needStop {
-		w.registerTaskRuntime()
-		utils.Delay(w, time.Duration(w.taskDefine.HeartbeatInterval)*time.Millisecond)
-	}
-	w.store.RemoveTaskRuntime(w.runtime.StrategyId, w.runtime.TaskId, w.runtime.Id)
 }

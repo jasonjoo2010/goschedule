@@ -15,12 +15,16 @@ type demoSimpleWorker struct {
 	started bool
 }
 
-func (d *demoSimpleWorker) Start(id, p string) {
+func (d *demoSimpleWorker) Start(id, p string) error {
 	d.started = true
+
+	return nil
 }
 
-func (d *demoSimpleWorker) Stop(id, p string) {
+func (d *demoSimpleWorker) Stop(id, p string) error {
 	d.started = false
+
+	return nil
 }
 
 func TestSimpleWorker(t *testing.T) {

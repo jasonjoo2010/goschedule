@@ -5,47 +5,59 @@
 package task_worker
 
 import (
+	"context"
 	"sync"
 	"sync/atomic"
 
-	"github.com/sirupsen/logrus"
+	"github.com/jasonjoo2010/goschedule/log"
+	"github.com/jasonjoo2010/goschedule/utils"
 )
 
 // select() -> execute() -> execute() [queue empty && all done] -> select()
 
 type NormalModel struct {
-	sync.Mutex
-	worker   *TaskWorker
-	waiting  int32
+	mu       sync.Mutex
 	notifier chan int
-	stopped  bool
+
+	ctx       context.Context
+	ctxCancel context.CancelFunc
+
+	worker  *TaskWorker
+	waiting int32
 }
 
 func NewNormalModel(worker *TaskWorker) *NormalModel {
-	return &NormalModel{
+	m := &NormalModel{
 		worker:   worker,
 		notifier: make(chan int),
 	}
+
+	m.ctx, m.ctxCancel = context.WithCancel(context.Background())
+	return m
 }
 
 func (m *NormalModel) Stop() {
-	m.Lock()
-	defer m.Unlock()
-	m.stopped = true
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	m.ctxCancel()
 	close(m.notifier)
 }
 
 func (m *NormalModel) notifyAll() {
-	m.Lock()
-	defer m.Unlock()
-	if m.stopped {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if utils.ContextDone(m.ctx) {
 		return
 	}
-	for i := 0; i < m.worker.taskDefine.ExecutorCount-1; i++ {
+
+	cnt := atomic.LoadInt32(&m.waiting)
+	for i := 0; i < int(cnt); i++ {
 		select {
 		case m.notifier <- 1:
 		default:
-			logrus.Warn("No waiting executor can be notified")
+			log.Warn("No waiting executor can be notified")
 			return
 		}
 	}
@@ -55,11 +67,16 @@ func (m *NormalModel) LoopOnce() {
 	if m.worker.executeOnceOrReturn() {
 		return
 	}
-	// queue empty
+
+	if utils.ContextDone(m.ctx) {
+		return
+	}
+
+	// when queue empty
 	cur := int(atomic.AddInt32(&m.waiting, 1))
 	if cur == m.worker.taskDefine.ExecutorCount {
 		// Only last one can fetch new data
-		// Release first from waiting avoiding other executors enter again
+		// Release first from waiting
 		atomic.AddInt32(&m.waiting, -1)
 		m.worker.selectOnce()
 		m.notifyAll()

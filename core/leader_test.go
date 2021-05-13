@@ -20,16 +20,20 @@ type DemoWorker struct {
 	cnt int32
 }
 
-func (demo *DemoWorker) Start(strategyId, parameter string) {
+func (demo *DemoWorker) Start(strategyId, parameter string) error {
 	time.Sleep(500 * time.Millisecond)
 	fmt.Println("start for", strategyId)
 	atomic.AddInt32(&demo.cnt, 1)
+
+	return nil
 }
 
-func (demo *DemoWorker) Stop(strategyId, parameter string) {
+func (demo *DemoWorker) Stop(strategyId, parameter string) error {
 	time.Sleep(500 * time.Millisecond)
 	fmt.Println("stop for", strategyId)
 	atomic.AddInt32(&demo.cnt, -1)
+
+	return nil
 }
 
 func TestStopAllWorkers(t *testing.T) {
@@ -119,7 +123,7 @@ func TestExpiredSchedulers(t *testing.T) {
 	assert.Equal(t, 2, len(runtimes))
 
 	// Wait to cleared
-	time.Sleep(manager.DeathTimeout + manager.ScheduleInterval)
+	time.Sleep(manager.cfg.DeathTimeout + manager.cfg.ScheduleInterval)
 
 	list, _ = store.GetSchedulers()
 	assert.Equal(t, 1, len(list))
@@ -163,12 +167,12 @@ func TestAssign(t *testing.T) {
 	manager1 := newManager(t, store)
 	manager2 := newManager(t, store)
 	manager3 := newManager(t, store)
-	manager1.ScheduleInterval = 200 * time.Millisecond
-	manager2.ScheduleInterval = 200 * time.Millisecond
-	manager3.ScheduleInterval = 200 * time.Millisecond
-	manager1.StallAfterStartup = 0
-	manager2.StallAfterStartup = 0
-	manager3.StallAfterStartup = 0
+	manager1.cfg.ScheduleInterval = 200 * time.Millisecond
+	manager2.cfg.ScheduleInterval = 200 * time.Millisecond
+	manager3.cfg.ScheduleInterval = 200 * time.Millisecond
+	manager1.cfg.StallAfterStartup = 0
+	manager2.cfg.StallAfterStartup = 0
+	manager3.cfg.StallAfterStartup = 0
 
 	TASK_COUNT := 2
 
