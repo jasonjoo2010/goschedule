@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/jasonjoo2010/goschedule/types"
 	"github.com/jasonjoo2010/goschedule/utils"
 	"github.com/stretchr/testify/assert"
 )
@@ -16,8 +17,8 @@ type Demo struct {
 	x, y int
 }
 
-func (d *Demo) Start(id, p string) {}
-func (d *Demo) Stop(id, p string)  {}
+func (d *Demo) Start(id, p string) error { return nil }
+func (d *Demo) Stop(id, p string) error  { return nil }
 
 func callback(strategyId, parameter string) {
 	// empty
@@ -33,7 +34,7 @@ func TestRegister(t *testing.T) {
 	assert.NotEqual(t, &Demo{1, 2}, GetWorker("a"))
 
 	RegisterFunc("a", callback)
-	var fn FuncInterface = callback
+	var fn types.FuncInterface = callback
 	assert.IsType(t, fn, GetFunc("a"))
 
 	demo := &Demo{1, 2}

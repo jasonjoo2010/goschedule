@@ -5,20 +5,22 @@
 package core
 
 import (
-	"context"
 	"errors"
+	"sync"
 	"time"
 
 	"github.com/jasonjoo2010/goschedule/core/definition"
 	"github.com/jasonjoo2010/goschedule/core/worker"
 	"github.com/jasonjoo2010/goschedule/core/worker/task_worker"
+	"github.com/jasonjoo2010/goschedule/log"
 	"github.com/jasonjoo2010/goschedule/store"
+	"github.com/jasonjoo2010/goschedule/types"
 	"github.com/jasonjoo2010/goschedule/utils"
 	"github.com/sirupsen/logrus"
 )
 
-func (s *ScheduleManager) isLeader(strategyId string) bool {
-	list, err := s.store.GetStrategyRuntimes(strategyId)
+func (manager *ScheduleManager) isLeader(strategyId string) bool {
+	list, err := manager.store.GetStrategyRuntimes(strategyId)
 	if err != nil || len(list) < 1 {
 		return false
 	}
@@ -26,58 +28,58 @@ func (s *ScheduleManager) isLeader(strategyId string) bool {
 	var myself *definition.StrategyRuntime
 	for i, runtime := range list {
 		arr[i] = runtime.SchedulerId
-		if runtime.SchedulerId == s.scheduler.Id {
+		if runtime.SchedulerId == manager.scheduler.Id {
 			myself = runtime
 		}
 	}
 	now := time.Now().Unix() * 1000
-	if myself != nil && now-myself.CreateAt < s.StallAfterStartup {
+	if myself != nil && now-myself.CreateAt < manager.cfg.StallAfterStartup.Milliseconds() {
 		// schedule after stalling
 		return false
 	}
 	leaderUUID := utils.FetchLeader(arr)
-	if leaderUUID == s.scheduler.Id {
+	if leaderUUID == manager.scheduler.Id {
 		return true
 	}
 	// double check the scheduler really exists
-	scheduler, _ := s.store.GetScheduler(leaderUUID)
+	scheduler, _ := manager.store.GetScheduler(leaderUUID)
 	if scheduler == nil {
 		// dirty runtime
-		s.cleanScheduler(leaderUUID)
+		manager.cleanScheduler(leaderUUID)
 	}
 	return false
 }
 
-func (s *ScheduleManager) cleanScheduler(schedulerId string) {
-	s.store.UnregisterScheduler(schedulerId)
+func (manager *ScheduleManager) cleanScheduler(schedulerId string) {
+	manager.store.UnregisterScheduler(schedulerId)
 	// clean dead runtimes binded to it
-	strategies, err := s.store.GetStrategies()
+	strategies, err := manager.store.GetStrategies()
 	if err != nil {
-		logrus.Warn("Failed to fetch strategies: ", err.Error())
+		log.Warnf("Failed to fetch strategies: %s", err.Error())
 		return
 	}
 	for _, strategy := range strategies {
-		s.store.RemoveStrategyRuntime(strategy.Id, schedulerId)
+		manager.store.RemoveStrategyRuntime(strategy.Id, schedulerId)
 	}
 }
 
-func (s *ScheduleManager) clearExpiredSchedulers() {
-	schedulers, err := s.store.GetSchedulers()
+func (manager *ScheduleManager) clearExpiredSchedulers() {
+	schedulers, err := manager.store.GetSchedulers()
 	if err != nil {
-		logrus.Warn("Get scheudlers failed: ", err.Error())
+		logrus.Warnf("Get scheudlers failed: %s", err.Error())
 		return
 	}
 	now := time.Now().UnixNano() / 1e6
 	for _, scheduler := range schedulers {
-		if now-scheduler.LastHeartbeat > s.DeathTimeout.Milliseconds() {
+		if now-scheduler.LastHeartbeat > manager.cfg.DeathTimeout.Milliseconds() {
 			logrus.Info("Clear expired scheduler: ", scheduler.Id, ", last reach at ", scheduler.LastHeartbeat)
-			s.cleanScheduler(scheduler.Id)
+			manager.cleanScheduler(scheduler.Id)
 		}
 	}
 }
 
-func (s *ScheduleManager) generateRuntimes() {
-	strategies, err := s.store.GetStrategies()
+func (manager *ScheduleManager) generateRuntimes() {
+	strategies, err := manager.store.GetStrategies()
 	if err != nil {
 		logrus.Warn("Get strategies failed: ", err.Error())
 		return
@@ -86,34 +88,34 @@ func (s *ScheduleManager) generateRuntimes() {
 	ip := utils.GetHostIPv4()
 	for _, strategy := range strategies {
 		canSchedule := utils.CanSchedule(strategy.IpList, hostname, ip)
-		runtime, err := s.store.GetStrategyRuntime(strategy.Id, s.scheduler.Id)
+		runtime, err := manager.store.GetStrategyRuntime(strategy.Id, manager.scheduler.Id)
 		if err != nil && err != store.NotExist {
 			continue
 		}
-		if s.scheduler.Enabled && strategy.Enabled && canSchedule {
+		if manager.scheduler.Enabled && strategy.Enabled && canSchedule {
 			// register runtimes if lack
 			if runtime == nil {
 				runtime = &definition.StrategyRuntime{
-					SchedulerId: s.scheduler.Id,
+					SchedulerId: manager.scheduler.Id,
 					StrategyId:  strategy.Id,
 					CreateAt:    time.Now().Unix() * 1000,
 				}
-				s.store.SetStrategyRuntime(runtime)
+				manager.store.SetStrategyRuntime(runtime)
 			}
 		} else {
 			// clear runtimes if any
 			if runtime != nil {
 				logrus.Info("Clean runtime for strategy: ", runtime.StrategyId, " with scheduler ", runtime.SchedulerId)
-				s.store.RemoveStrategyRuntime(strategy.Id, s.scheduler.Id)
+				manager.store.RemoveStrategyRuntime(strategy.Id, manager.scheduler.Id)
 				// stop the workers
-				s.stopWorkers(strategy)
+				manager.stopWorkers(strategy)
 			}
 		}
 	}
 }
 
-func (s *ScheduleManager) assign() {
-	strategies, err := s.store.GetStrategies()
+func (manager *ScheduleManager) assign() {
+	strategies, err := manager.store.GetStrategies()
 	if err != nil {
 		logrus.Warn("Failed to fetch strategies", err)
 		return
@@ -123,11 +125,11 @@ func (s *ScheduleManager) assign() {
 		if !strategy.Enabled {
 			continue
 		}
-		if !s.isLeader(strategy.Id) {
+		if !manager.isLeader(strategy.Id) {
 			continue
 		}
 		// It's the leader to specific strategy
-		runtimes, err := s.store.GetStrategyRuntimes(strategy.Id)
+		runtimes, err := manager.store.GetStrategyRuntimes(strategy.Id)
 		if err != nil {
 			logrus.Warn("Failed to fetch runtimes for ", strategy.Id, ": ", err.Error())
 			continue
@@ -137,32 +139,59 @@ func (s *ScheduleManager) assign() {
 		for i := 0; i < len(runtimes); i++ {
 			if workerRequiredArr[i] != runtimes[i].RequestedNum {
 				runtimes[i].RequestedNum = workerRequiredArr[i]
-				s.store.SetStrategyRuntime(runtimes[i])
+				manager.store.SetStrategyRuntime(runtimes[i])
 			}
 		}
 	}
 }
 
-func (s *ScheduleManager) createWorker(strategy *definition.Strategy) (worker.Worker, error) {
+func (manager *ScheduleManager) createWorker(strategy *definition.Strategy) (types.Worker, error) {
 	switch strategy.Kind {
 	case definition.SimpleKind:
 		return worker.NewSimple(*strategy)
 	case definition.FuncKind:
 		return worker.NewFunc(*strategy)
 	case definition.TaskKind:
-		task, err := s.store.GetTask(strategy.Bind)
+		task, err := manager.store.GetTask(strategy.Bind)
 		if err != nil {
 			return nil, err
 		}
-		return task_worker.NewTask(*strategy, *task, s.store, s.scheduler.Id)
+		return task_worker.NewTask(*strategy, *task, manager.store, manager.scheduler.Id)
 	default:
 		logrus.Error("Unknow Kind of strategy: ", strategy.Kind)
 		return nil, errors.New("Unknow strategy kind")
 	}
 }
 
-func (s *ScheduleManager) adjustWorkers() {
-	strategies, err := s.store.GetStrategies()
+func (manager *ScheduleManager) maintainWorkers(strategy *definition.Strategy, target int) {
+	workersCnt := manager.workerSet.WorkersCountFor(strategy.Id)
+	delta := target - workersCnt
+	if delta > 0 {
+		// increase
+		log.Infof("Increase worker by %d for %s on %s", delta, strategy.Id, manager.scheduler.Id)
+		for i := 0; i < delta; i++ {
+			w, err := manager.createWorker(strategy)
+			if err != nil {
+				logrus.Error("Can't create worker for: ", strategy.Id)
+				continue
+			}
+			go w.Start(strategy.Id, strategy.Parameter)
+			logrus.Info("Worker of strategy ", strategy.Id, " started")
+			manager.workerSet.AddWorker(strategy.Id, w)
+		}
+	} else if delta < 0 {
+		// decrease
+		logrus.Info("Decrease worker by ", -delta, " for ", strategy.Id, " on ", manager.scheduler.Id)
+		for i := 0; i < -delta; i++ {
+			if w := manager.workerSet.RemoveWorker(strategy.Id); w != nil {
+				go w.Stop(strategy.Id, strategy.Parameter)
+			}
+		}
+	}
+}
+
+func (manager *ScheduleManager) adjustWorkers() {
+	strategies, err := manager.store.GetStrategies()
 	if err != nil {
 		logrus.Warn("Failed to fetch strategies ", err)
 		return
@@ -172,7 +201,7 @@ func (s *ScheduleManager) adjustWorkers() {
 		if !strategy.Enabled {
 			continue
 		}
-		runtime, err := s.store.GetStrategyRuntime(strategy.Id, s.scheduler.Id)
+		runtime, err := manager.store.GetStrategyRuntime(strategy.Id, manager.scheduler.Id)
 		if err == store.NotExist {
 			continue
 		}
@@ -184,109 +213,93 @@ func (s *ScheduleManager) adjustWorkers() {
 			logrus.Error("Requested count of workers in runtime is set to a wrong number: ", runtime.RequestedNum, " for ", strategy.Id)
 			runtime.RequestedNum = 0
 		}
-		workers, ok := s.workersMap[runtime.StrategyId]
-		if !ok {
-			workers = make([]worker.Worker, 0, utils.Max(1, runtime.RequestedNum))
-			s.workersMap[runtime.StrategyId] = workers
-		}
-		if len(workers) != runtime.RequestedNum {
-			delta := runtime.RequestedNum - len(workers)
-			if delta > 0 {
-				// increase
-				logrus.Info("Increase worker by ", delta, " for ", strategy.Id, " on ", s.scheduler.Id)
-				for i := 0; i < delta; i++ {
-					w, err := s.createWorker(strategy)
-					if err != nil {
-						logrus.Error("Can't create worker for: ", strategy.Id)
-						continue
-					}
-					go w.Start(strategy.Id, strategy.Parameter)
-					logrus.Info("Worker of strategy ", strategy.Id, " started")
-					workers = append(workers, w)
-				}
-			} else {
-				// decrease
-				logrus.Info("Decrease worker by ", -delta, " for ", strategy.Id, " on ", s.scheduler.Id)
-				discards := workers[len(workers)-utils.Abs(delta):]
-				workers = workers[:len(workers)-utils.Abs(delta)]
-				// stop them
-				for _, w := range discards {
-					w.Stop(strategy.Id, strategy.Parameter)
-				}
-			}
-			s.workersMap[runtime.StrategyId] = workers
+		workersCnt := manager.workerSet.WorkersCountFor(runtime.StrategyId)
+		if workersCnt != runtime.RequestedNum {
+			manager.maintainWorkers(strategy, runtime.RequestedNum)
+			workersCnt = manager.workerSet.WorkersCountFor(runtime.StrategyId)
 		}
 		// update info in storage
-		if runtime.Num != len(workers) {
-			runtime.Num = len(workers)
-			s.store.SetStrategyRuntime(runtime)
+		if runtime.Num != workersCnt {
+			runtime.Num = workersCnt
+			manager.store.SetStrategyRuntime(runtime)
 		}
 	}
 }
 
-func (s *ScheduleManager) schedule() {
-	s.clearExpiredSchedulers()
-	s.generateRuntimes()
+func (manager *ScheduleManager) schedule() {
+	manager.clearExpiredSchedulers()
+	manager.generateRuntimes()
 	// calculate schedule table
-	s.assign()
+	manager.assign()
 	// adjust local workers
-	s.adjustWorkers()
+	manager.adjustWorkers()
 }
 
 // stopWorkers stop group of workers binded to specific strategy
-func (s *ScheduleManager) stopWorkers(strategy *definition.Strategy) context.Context {
-	ctx, cancel := context.WithTimeout(context.Background(), s.ShutdownTimeout)
-	workers, ok := s.workersMap[strategy.Id]
-	if false == ok {
-		cancel()
-		return ctx
+func (manager *ScheduleManager) stopWorkers(strategy *definition.Strategy) error {
+	defer manager.workerSet.Delete(strategy.Id)
+
+	workers := manager.workerSet.WorkersFor(strategy.Id)
+	if len(workers) == 0 {
+		return nil
 	}
-	delete(s.workersMap, strategy.Id)
-	// async stop
-	go func() {
-		var ctxArr []context.Context
-		for _, w := range workers {
-			subCtx, subCancel := context.WithTimeout(context.Background(), s.ShutdownTimeout)
-			go func(w worker.Worker) {
-				w.Stop(strategy.Id, strategy.Parameter)
-				subCancel()
-			}(w)
-			ctxArr = append(ctxArr, subCtx)
-		}
-		for _, subCtx := range ctxArr {
-			<-subCtx.Done()
-		}
-		cancel()
-	}()
-	return ctx
+
+	wg := sync.WaitGroup{}
+	for _, w := range workers {
+		wg.Add(1)
+		go func(w types.Worker) {
+			defer wg.Done()
+			defer func() {
+				if err := recover(); err != nil {
+					log.Errorf("Stop worker %s failed: %v", strategy.Id, err)
+				}
+			}()
+			w.Stop(strategy.Id, strategy.Parameter)
+		}(w)
+	}
+
+	wg.Wait()
+	return nil
 }
 
-func (s *ScheduleManager) stopAllWorkers() {
-	var ctxArr []context.Context
-	for k := range s.workersMap {
-		strategy, _ := s.store.GetStrategy(k)
+func (manager *ScheduleManager) stopAllWorkers() {
+	wg := sync.WaitGroup{}
+	names := manager.workerSet.Strategies()
+	for _, name := range names {
+		strategy, _ := manager.store.GetStrategy(name)
 		if strategy == nil {
-			logrus.Warn("Strategy not found: ", k)
-			ctxArr = append(ctxArr, s.stopWorkers(&definition.Strategy{
-				Id:        k,
+			logrus.Warn("Strategy not found: ", name)
+			strategy = &definition.Strategy{
+				Id:        name,
 				Parameter: "",
-			}))
-		} else {
-			ctxArr = append(ctxArr, s.stopWorkers(strategy))
+			}
 		}
+
+		wg.Add(1)
+		go func(s *definition.Strategy) {
+			defer wg.Done()
+			manager.stopWorkers(s)
+		}(strategy)
 	}
 	// wait
-	for _, ctx := range ctxArr {
-		<-ctx.Done()
-	}
+	wg.Wait()
 }
 
-func (s *ScheduleManager) scheduleLoop() {
+func (manager *ScheduleManager) scheduleLoop() {
 	// stop handler
-	defer func() { s.shutdownNotifier <- 2 }()
-	for !s.needStop {
-		s.schedule()
-		utils.Delay(s, s.ScheduleInterval)
+	defer manager.wg.Done()
+
+	ticker := time.NewTicker(manager.cfg.ScheduleInterval)
+	defer ticker.Stop()
+	defer manager.stopAllWorkers()
+
+LOOP:
+	for {
+		select {
+		case <-manager.ctx.Done():
+			break LOOP
+		case <-ticker.C:
+			manager.schedule()
+		}
 	}
-	s.stopAllWorkers()
 }

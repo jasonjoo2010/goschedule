@@ -4,7 +4,9 @@
 
 package core
 
-import "github.com/jasonjoo2010/goschedule/utils"
+import (
+	"time"
+)
 
 func (s *ScheduleManager) registerInfo() {
 	scheduler, err := s.store.GetScheduler(s.scheduler.Id)
@@ -20,11 +22,19 @@ func (s *ScheduleManager) registerInfo() {
 
 func (s *ScheduleManager) heartbeat() {
 	// stop handler
-	defer func() { s.shutdownNotifier <- 1 }()
-	for !s.needStop {
-		s.registerInfo()
-		utils.Delay(s, s.HeartbeatInterval)
-	}
+	defer s.wg.Done()
+	defer s.cleanScheduler(s.scheduler.Id)
 
-	s.cleanScheduler(s.scheduler.Id)
+	ticker := time.NewTicker(s.cfg.HeartbeatInterval)
+	defer ticker.Stop()
+
+LOOP:
+	for {
+		select {
+		case <-s.ctx.Done():
+			break LOOP
+		case <-ticker.C:
+			s.registerInfo()
+		}
+	}
 }

@@ -12,19 +12,20 @@ import (
 	"github.com/jasonjoo2010/goschedule/core/definition"
 	"github.com/jasonjoo2010/goschedule/store"
 	"github.com/jasonjoo2010/goschedule/store/memory"
+	"github.com/jasonjoo2010/goschedule/types"
 	"github.com/stretchr/testify/assert"
 )
 
 func newManager(t *testing.T, store store.Store) *ScheduleManager {
-	manager, err := New(store)
+	cfg := types.ScheduleConfig{
+		ScheduleInterval:  100 * time.Millisecond,
+		HeartbeatInterval: 100 * time.Millisecond,
+		DeathTimeout:      1200 * time.Millisecond,
+		StallAfterStartup: 1 * time.Millisecond,
+	}
+	manager, err := New(cfg, store)
 	assert.Nil(t, err)
 	assert.NotNil(t, manager)
-
-	// change heartbeat rate manually
-	manager.ScheduleInterval = 100 * time.Millisecond
-	manager.HeartbeatInterval = 100 * time.Millisecond
-	manager.DeathTimeout = 1200 * time.Millisecond
-	manager.StallAfterStartup = 0
 
 	return manager
 }

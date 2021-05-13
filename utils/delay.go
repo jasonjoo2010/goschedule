@@ -5,6 +5,7 @@
 package utils
 
 import (
+	"context"
 	"time"
 
 	"github.com/jasonjoo2010/goschedule/core/definition"
@@ -36,6 +37,28 @@ func Delay(target DelaySupport, duration time.Duration) {
 		if target.NeedStop() {
 			break
 		}
+	}
+}
+
+// DelayContext try to wait and return true if normally completed.
+func DelayContext(ctx context.Context, duration time.Duration) bool {
+	if duration < 1 {
+		select {
+		case <-ctx.Done():
+			return false
+		default:
+			return true
+		}
+	}
+
+	timeout := time.NewTimer(duration)
+	defer timeout.Stop()
+
+	select {
+	case <-ctx.Done():
+		return false
+	case <-timeout.C:
+		return true
 	}
 }
 
