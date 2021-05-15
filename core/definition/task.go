@@ -11,7 +11,7 @@ import "encoding/json"
 //	fetch()   *         *         *
 //  exe()     exe()     exe()     exe()
 //	exe()     exe()     exe()     exe()
-//	done      done      exe()     dont
+//	done      done      exe()     done
 //  done      done      fetch()   done
 //	exe()     exe()     exe()     exe()
 //	exe()     exe()     exe()     exe()
