@@ -5,6 +5,7 @@
 package task_worker
 
 import (
+	"context"
 	"reflect"
 	"testing"
 	"time"
@@ -18,9 +19,10 @@ func TestGeneral(t *testing.T) {
 	w := newTaskWorker()
 	w.Start("s0", "")
 	time.Sleep(100 * time.Millisecond)
-	assert.True(t, w.started)
+	assert.NotNil(t, w.ctx)
+	assert.False(t, utils.ContextDone(w.ctx))
 	w.Stop("s0", "")
-	assert.False(t, w.started)
+	assert.True(t, utils.ContextDone(w.ctx))
 }
 
 func TestSelectOnce(t *testing.T) {
@@ -29,9 +31,11 @@ func TestSelectOnce(t *testing.T) {
 	w.taskItems = []definition.TaskItem{item1}
 	memoryStore.IncreaseTaskItemsConfigVersion(w.strategyDefine.Id, w.taskDefine.Id)
 	assert.Equal(t, 0, len(w.data))
+	w.Start("s0", "")
 	w.selectOnce()
 	assert.Equal(t, 3, len(w.data))
 	assert.Equal(t, 0, len(w.queuedData))
+	w.Stop("s0", "")
 }
 
 func TestSelectQueued(t *testing.T) {
@@ -39,6 +43,7 @@ func TestSelectQueued(t *testing.T) {
 	item1 := definition.TaskItem{}
 	w.taskItems = []definition.TaskItem{item1}
 	w.data = make(chan interface{}, 1)
+	w.ctx = context.Background()
 	memoryStore.IncreaseTaskItemsConfigVersion(w.strategyDefine.Id, w.taskDefine.Id)
 	assert.Equal(t, 0, len(w.data))
 	w.selectOnce()

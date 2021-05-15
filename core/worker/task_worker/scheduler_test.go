@@ -168,20 +168,13 @@ func TestSchedule(t *testing.T) {
 		ItemId:     TEST_ITEM_ID1,
 		RuntimeId:  w.runtime.Id,
 	})
-	go w.schedule()
+	w.distributeTaskItems()
 
 	r, _ := memoryStore.GetTaskAssignment(TEST_STRATEGY_ID, TEST_TASK_ID, TEST_ITEM_ID1)
 	assert.NotNil(t, r)
 	assert.Equal(t, w.runtime.Id, r.RuntimeId)
 
-	w.needStop = true
-	select {
-	case val := <-w.notifierC:
-		assert.Equal(t, 4, val)
-	case <-time.After(500 * time.Millisecond):
-		assert.Fail(t, "Can not stop schedule")
-	}
-
+	w.cleanupSchedule()
 	r, _ = memoryStore.GetTaskAssignment(TEST_STRATEGY_ID, TEST_TASK_ID, TEST_ITEM_ID1)
 	assert.NotNil(t, r)
 	assert.NotEqual(t, w.runtime.Id, r.RuntimeId)

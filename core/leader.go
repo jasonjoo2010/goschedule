@@ -284,22 +284,3 @@ func (manager *ScheduleManager) stopAllWorkers() {
 	// wait
 	wg.Wait()
 }
-
-func (manager *ScheduleManager) scheduleLoop() {
-	// stop handler
-	defer manager.wg.Done()
-
-	ticker := time.NewTicker(manager.cfg.ScheduleInterval)
-	defer ticker.Stop()
-	defer manager.stopAllWorkers()
-
-LOOP:
-	for {
-		select {
-		case <-manager.ctx.Done():
-			break LOOP
-		case <-ticker.C:
-			manager.schedule()
-		}
-	}
-}
