@@ -398,11 +398,7 @@ func (w *TaskWorker) Start(strategyId, parameter string) error {
 	if w.ctx != nil {
 		return errors.New("Task Worker has already started")
 	}
-	select {
-	case <-w.ctx.Done():
-		return errors.New("Task worker has already stopped")
-	default:
-	}
+
 	if parameter != "" {
 		w.parameter = parameter
 	}

@@ -9,10 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jasonjoo2010/goschedule/core"
 	"github.com/jasonjoo2010/goschedule/core/definition"
 	"github.com/jasonjoo2010/goschedule/store/memory"
-	"github.com/jasonjoo2010/goschedule/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -45,7 +43,6 @@ func (d *DemoHeartbeatTask) Execute(task interface{}, ownSign string) bool {
 
 func newTaskWorker() *TaskWorker {
 	RegisterTaskTypeName("demoHeartbeat", &DemoHeartbeatTask{})
-	manager, _ := core.New(types.ScheduleConfig{}, memoryStore)
 	item1 := definition.TaskItem{
 		Id: TEST_ITEM_ID1,
 	}
@@ -70,7 +67,7 @@ func newTaskWorker() *TaskWorker {
 			item1,
 			item2,
 		},
-	}, memoryStore, manager.Scheduler().Id)
+	}, memoryStore, "test_manager")
 	return w.(*TaskWorker)
 }
 
@@ -101,7 +98,7 @@ func TestRegisterTaskRuntime(t *testing.T) {
 	assert.Equal(t, int64(1), ver2-ver1)
 }
 
-func TestHeartBeat(t *testing.T) {
+func TestTaskHeartBeat(t *testing.T) {
 	clearStore()
 	w := newTaskWorker()
 	w.registerTaskRuntime()

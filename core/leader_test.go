@@ -58,12 +58,11 @@ func TestStopAllWorkers(t *testing.T) {
 		Bind:    "demoStopWorker",
 		Total:   50,
 	})
-	manager.registerInfo()
-	manager.generateRuntimes()
-	manager.schedule()
-	time.Sleep(time.Second)
+	assert.Nil(t, manager.Start())
+	time.Sleep(2 * time.Second)
 	assert.Equal(t, int32(100), demo.cnt)
-	manager.stopAllWorkers()
+
+	assert.Nil(t, manager.Close())
 	assert.Equal(t, int32(0), demo.cnt)
 }
 
@@ -84,6 +83,7 @@ func TestLeader(t *testing.T) {
 	manager1.registerInfo()
 	manager1.generateRuntimes()
 
+	time.Sleep(time.Second)
 	assert.True(t, manager1.isLeader("s0"))
 	assert.False(t, manager2.isLeader("s0"))
 

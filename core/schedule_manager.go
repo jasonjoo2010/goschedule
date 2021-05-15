@@ -94,14 +94,23 @@ func (s *ScheduleManager) Start() error {
 	if s.ctx != nil {
 		return errors.New("Manager has already been started")
 	}
-	if utils.ContextDone(s.ctx) {
-		return errors.New("Manager has already been closed")
-	}
 
 	s.ctx, s.ctxCancel = context.WithCancel(context.Background())
 	s.wg.Add(2)
-	go s.heartbeat()
-	go s.scheduleLoop()
+	go utils.LoopContext(s.ctx,
+		s.cfg.HeartbeatInterval,
+		s.registerInfo,
+		func() {
+			defer s.wg.Done()
+			defer s.cleanScheduler(s.scheduler.Id)
+		})
+	go utils.LoopContext(s.ctx,
+		s.cfg.ScheduleInterval,
+		s.schedule,
+		func() {
+			defer s.wg.Done()
+			defer s.stopAllWorkers()
+		})
 	return nil
 }
 
