@@ -46,7 +46,7 @@ type Task struct {
 	ExecutorCount  int // 1 selector -> N executor(s)
 	Model          Model
 	Parameter      string // Parameter of task
-	Bind           string // Binded to registry
+	Bind           string // Bond to registry
 	Items          []TaskItem
 	MaxTaskItems   int // max task items per Worker
 
