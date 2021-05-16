@@ -5,7 +5,6 @@
 package worker
 
 import (
-	"fmt"
 	"reflect"
 	"sync"
 
@@ -51,7 +50,6 @@ func GetWorker(name string) types.Worker {
 
 func GetFunc(name string) types.FuncInterface {
 	if v, ok := registryMap.Load(name); ok {
-		fmt.Println()
 		if fn, ok := v.(types.FuncInterface); ok {
 			return fn
 		}
