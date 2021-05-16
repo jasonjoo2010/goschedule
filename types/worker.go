@@ -7,8 +7,6 @@ type FuncInterface func(strategyId, parameter string)
 
 // Worker manages data of scheduling for binded strategy
 type Worker interface {
-	// XXX deal with the error
-	// XXX remove the parameters
 	Start(strategyId, parameter string) error
 	Stop(strategyId, parameter string) error
 }

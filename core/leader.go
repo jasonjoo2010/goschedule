@@ -175,7 +175,12 @@ func (manager *ScheduleManager) maintainWorkers(strategy *definition.Strategy, t
 				logrus.Error("Can't create worker for: ", strategy.ID)
 				continue
 			}
-			go w.Start(strategy.ID, strategy.Parameter)
+			go func() {
+				err := w.Start(strategy.ID, strategy.Parameter)
+				if err != nil {
+					log.Errorf("Failed to start a worker: %+v", err.Error())
+				}
+			}()
 			logrus.Info("Worker of strategy ", strategy.ID, " started")
 			manager.workerSet.AddWorker(strategy.ID, w)
 		}
@@ -184,7 +189,12 @@ func (manager *ScheduleManager) maintainWorkers(strategy *definition.Strategy, t
 		logrus.Info("Decrease worker by ", -delta, " for ", strategy.ID, " on ", manager.scheduler.ID)
 		for i := 0; i < -delta; i++ {
 			if w := manager.workerSet.RemoveWorker(strategy.ID); w != nil {
-				go w.Stop(strategy.ID, strategy.Parameter)
+				go func() {
+					err := w.Stop(strategy.ID, strategy.Parameter)
+					if err != nil {
+						log.Errorf("Failed to stop a worker: %+v", err.Error())
+					}
+				}()
 			}
 		}
 	}
