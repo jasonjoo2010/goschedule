@@ -44,20 +44,20 @@ func (d *DemoHeartbeatTask) Execute(task interface{}, ownSign string) bool {
 func newTaskWorker() *TaskWorker {
 	RegisterTaskTypeName("demoHeartbeat", &DemoHeartbeatTask{})
 	item1 := definition.TaskItem{
-		Id: TEST_ITEM_ID1,
+		ID: TEST_ITEM_ID1,
 	}
 	item2 := definition.TaskItem{
-		Id: TEST_ITEM_ID2,
+		ID: TEST_ITEM_ID2,
 	}
 	w, _ := NewTask(definition.Strategy{
-		Id:      "s0",
-		IpList:  []string{"127.0.0.1"},
+		ID:      "s0",
+		IPList:  []string{"127.0.0.1"},
 		Total:   1,
 		Kind:    definition.TaskKind,
 		Bind:    TEST_TASK_ID,
 		Enabled: true,
 	}, definition.Task{
-		Id:                TEST_TASK_ID,
+		ID:                TEST_TASK_ID,
 		Bind:              "demoHeartbeat",
 		BatchCount:        1,
 		ExecutorCount:     1,
@@ -74,12 +74,12 @@ func newTaskWorker() *TaskWorker {
 func clearStore() {
 	runtimes, _ := memoryStore.GetTaskRuntimes(TEST_STRATEGY_ID, TEST_TASK_ID)
 	for _, r := range runtimes {
-		memoryStore.RemoveTaskRuntime(r.StrategyId, r.TaskId, r.Id)
+		memoryStore.RemoveTaskRuntime(r.StrategyID, r.TaskID, r.ID)
 	}
 
 	assignments, _ := memoryStore.GetTaskAssignments(TEST_STRATEGY_ID, TEST_TASK_ID)
 	for _, t := range assignments {
-		memoryStore.RemoveTaskAssignment(t.StrategyId, t.TaskId, t.ItemId)
+		memoryStore.RemoveTaskAssignment(t.StrategyID, t.TaskID, t.ItemID)
 	}
 }
 

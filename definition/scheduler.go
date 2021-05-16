@@ -7,11 +7,11 @@ package definition
 import "fmt"
 
 type Scheduler struct {
-	Id            string
+	ID            string
 	LastHeartbeat int64
 	Enabled       bool // Whether it should begin to schedule
 }
 
 func (s *Scheduler) String() string {
-	return fmt.Sprint("{id=", s.Id, ",lastHeartbeat=", s.LastHeartbeat, ",enabled=", s.Enabled, "}")
+	return fmt.Sprint("{id=", s.ID, ",lastHeartbeat=", s.LastHeartbeat, ",enabled=", s.Enabled, "}")
 }

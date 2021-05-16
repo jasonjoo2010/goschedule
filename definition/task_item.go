@@ -12,56 +12,56 @@ import (
 // TaskItem represents definition of partition in scheduling.
 // A legal Worker must be assigned at least 1 TaskItem.
 type TaskItem struct {
-	Id        string
+	ID        string
 	Parameter string
 }
 
 func (item *TaskItem) String() string {
-	return fmt.Sprint("(t=", item.Id, ",p=", item.Parameter, ")")
+	return fmt.Sprint("(t=", item.ID, ",p=", item.Parameter, ")")
 }
 
 type TaskAssignment struct {
-	StrategyId         string
-	TaskId             string
-	ItemId             string
-	RuntimeId          string
-	RequestedRuntimeId string
+	StrategyID         string
+	TaskID             string
+	ItemID             string
+	RuntimeID          string
+	RequestedRuntimeID string
 	Parameter          string
 }
 
 func (assign *TaskAssignment) String() string {
 	b := strings.Builder{}
 	b.WriteRune('{')
-	b.WriteString(assign.ItemId)
+	b.WriteString(assign.ItemID)
 	b.WriteString(" => ")
-	if assign.RuntimeId == "" && assign.RequestedRuntimeId == "" {
+	if assign.RuntimeID == "" && assign.RequestedRuntimeID == "" {
 		b.WriteString("<empty>")
 	}
-	if assign.RuntimeId != "" {
-		b.WriteString(assign.RuntimeId)
-	} else if assign.RequestedRuntimeId != "" {
+	if assign.RuntimeID != "" {
+		b.WriteString(assign.RuntimeID)
+	} else if assign.RequestedRuntimeID != "" {
 		b.WriteRune('*')
-		b.WriteString(assign.RequestedRuntimeId)
+		b.WriteString(assign.RequestedRuntimeID)
 	}
 	b.WriteRune('}')
 	return b.String()
 }
 
 type TaskRuntime struct {
-	Id            string
+	ID            string
 	Version       int64
-	CreateTime    int64
-	LastHeartBeat int64
+	Createtime    int64
+	LastHeartbeat int64
 	NextRunnable  int64 // Zero indicating running
 	Statistics    Statistics
 
 	// Redundant fields which can be verified on console or other tools
-	Ip            string
+	IP            string
 	Hostname      string
 	ExecutorCount int
-	SchedulerId   string
-	StrategyId    string
+	SchedulerID   string
+	StrategyID    string
 	OwnSign       string
-	TaskId        string
+	TaskID        string
 	Bind          string
 }

@@ -54,28 +54,28 @@ func TestCanSchedule(t *testing.T) {
 func TestSortRuntimesWithShuffle(t *testing.T) {
 	runtimes := make([]*definition.StrategyRuntime, 5)
 	runtimes[0] = &definition.StrategyRuntime{
-		SchedulerId:  "A",
-		StrategyId:   "S",
+		SchedulerID:  "A",
+		StrategyID:   "S",
 		RequestedNum: 0,
 	}
 	runtimes[1] = &definition.StrategyRuntime{
-		SchedulerId:  "B",
-		StrategyId:   "S",
+		SchedulerID:  "B",
+		StrategyID:   "S",
 		RequestedNum: 2,
 	}
 	runtimes[2] = &definition.StrategyRuntime{
-		SchedulerId:  "C",
-		StrategyId:   "S",
+		SchedulerID:  "C",
+		StrategyID:   "S",
 		RequestedNum: 0,
 	}
 	runtimes[3] = &definition.StrategyRuntime{
-		SchedulerId:  "D",
-		StrategyId:   "S",
+		SchedulerID:  "D",
+		StrategyID:   "S",
 		RequestedNum: 2,
 	}
 	runtimes[4] = &definition.StrategyRuntime{
-		SchedulerId:  "E",
-		StrategyId:   "S",
+		SchedulerID:  "E",
+		StrategyID:   "S",
 		RequestedNum: 0,
 	}
 
@@ -89,100 +89,100 @@ func TestSortRuntimesWithShuffle(t *testing.T) {
 func TestSortStrategyRuntimes(t *testing.T) {
 	runtimes := make([]*definition.StrategyRuntime, 4)
 	runtimes[0] = &definition.StrategyRuntime{
-		SchedulerId: "a$b$3$00000012",
+		SchedulerID: "a$b$3$00000012",
 	}
 	runtimes[1] = &definition.StrategyRuntime{
-		SchedulerId: "c$b$3$00000011",
+		SchedulerID: "c$b$3$00000011",
 	}
 	runtimes[2] = &definition.StrategyRuntime{
-		SchedulerId: "b$b$3$00000013",
+		SchedulerID: "b$b$3$00000013",
 	}
 	runtimes[3] = &definition.StrategyRuntime{
-		SchedulerId: "a$b$3$000009",
+		SchedulerID: "a$b$3$000009",
 	}
 
 	SortStrategyRuntimes(runtimes)
 
-	assert.Equal(t, "a$b$3$000009", runtimes[0].SchedulerId)
-	assert.Equal(t, "b$b$3$00000013", runtimes[3].SchedulerId)
+	assert.Equal(t, "a$b$3$000009", runtimes[0].SchedulerID)
+	assert.Equal(t, "b$b$3$00000013", runtimes[3].SchedulerID)
 }
 
 func TestSortSchedulers(t *testing.T) {
 	schedulers := make([]*definition.Scheduler, 4)
 	schedulers[0] = &definition.Scheduler{
-		Id: "a$b$3$00000012",
+		ID: "a$b$3$00000012",
 	}
 	schedulers[1] = &definition.Scheduler{
-		Id: "c$b$3$00000011",
+		ID: "c$b$3$00000011",
 	}
 	schedulers[2] = &definition.Scheduler{
-		Id: "b$b$3$00000013",
+		ID: "b$b$3$00000013",
 	}
 	schedulers[3] = &definition.Scheduler{
-		Id: "a$b$3$000009",
+		ID: "a$b$3$000009",
 	}
 
 	SortSchedulers(schedulers)
 
-	assert.Equal(t, "a$b$3$000009", schedulers[0].Id)
-	assert.Equal(t, "b$b$3$00000013", schedulers[3].Id)
+	assert.Equal(t, "a$b$3$000009", schedulers[0].ID)
+	assert.Equal(t, "b$b$3$00000013", schedulers[3].ID)
 }
 
 func TestSortTaskRuntimes(t *testing.T) {
 	runtimes := make([]*definition.TaskRuntime, 4)
 	runtimes[0] = &definition.TaskRuntime{
-		Id: "a$b$3$00000012",
+		ID: "a$b$3$00000012",
 	}
 	runtimes[1] = &definition.TaskRuntime{
-		Id: "c$b$3$00000011",
+		ID: "c$b$3$00000011",
 	}
 	runtimes[2] = &definition.TaskRuntime{
-		Id: "b$b$3$00000013",
+		ID: "b$b$3$00000013",
 	}
 	runtimes[3] = &definition.TaskRuntime{
-		Id: "a$b$3$000009",
+		ID: "a$b$3$000009",
 	}
 
 	SortTaskRuntimes(runtimes)
 
-	assert.Equal(t, "a$b$3$000009", runtimes[0].Id)
-	assert.Equal(t, "b$b$3$00000013", runtimes[3].Id)
+	assert.Equal(t, "a$b$3$000009", runtimes[0].ID)
+	assert.Equal(t, "b$b$3$00000013", runtimes[3].ID)
 }
 
 func TestSortTaskAssignments(t *testing.T) {
 	assignments := make([]*definition.TaskAssignment, 4)
 	assignments[0] = &definition.TaskAssignment{
-		ItemId: "a",
+		ItemID: "a",
 	}
 	assignments[1] = &definition.TaskAssignment{
-		ItemId: "c",
+		ItemID: "c",
 	}
 	assignments[2] = &definition.TaskAssignment{
-		ItemId: "bb",
+		ItemID: "bb",
 	}
 	assignments[3] = &definition.TaskAssignment{
-		ItemId: "b",
+		ItemID: "b",
 	}
 
 	SortTaskAssignments(assignments)
 
-	assert.Equal(t, "a", assignments[0].ItemId)
-	assert.Equal(t, "bb", assignments[2].ItemId)
-	assert.Equal(t, "c", assignments[3].ItemId)
+	assert.Equal(t, "a", assignments[0].ItemID)
+	assert.Equal(t, "bb", assignments[2].ItemID)
+	assert.Equal(t, "c", assignments[3].ItemID)
 }
 
 func TestContainsTaskItem(t *testing.T) {
 	arr := make([]definition.TaskItem, 0, 10)
 	arr = append(arr, definition.TaskItem{
-		Id: "item0",
+		ID: "item0",
 	}, definition.TaskItem{
-		Id: "item1",
+		ID: "item1",
 	}, definition.TaskItem{
-		Id: "item2",
+		ID: "item2",
 	}, definition.TaskItem{
-		Id: "item3",
+		ID: "item3",
 	}, definition.TaskItem{
-		Id: "item4",
+		ID: "item4",
 	})
 
 	assert.True(t, ContainsTaskItem(arr, "item0"))
@@ -195,15 +195,15 @@ func TestContainsTaskItem(t *testing.T) {
 func TestRemoveTaskItem(t *testing.T) {
 	arr := make([]definition.TaskItem, 0, 10)
 	arr = append(arr, definition.TaskItem{
-		Id: "item0",
+		ID: "item0",
 	}, definition.TaskItem{
-		Id: "item1",
+		ID: "item1",
 	}, definition.TaskItem{
-		Id: "item2",
+		ID: "item2",
 	}, definition.TaskItem{
-		Id: "item3",
+		ID: "item3",
 	}, definition.TaskItem{
-		Id: "item4",
+		ID: "item4",
 	})
 
 	arr = RemoveTaskItem(arr, "item0")

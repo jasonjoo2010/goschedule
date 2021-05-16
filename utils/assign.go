@@ -66,7 +66,7 @@ func SortStrategyRuntimes(strategyRuntimes []*definition.StrategyRuntime) {
 		return
 	}
 	sort.Slice(strategyRuntimes, func(i, j int) bool {
-		return compareWithSequence(strategyRuntimes[i].SchedulerId, strategyRuntimes[j].SchedulerId)
+		return compareWithSequence(strategyRuntimes[i].SchedulerID, strategyRuntimes[j].SchedulerID)
 	})
 }
 
@@ -75,7 +75,7 @@ func SortTaskRuntimes(taskRuntimes []*definition.TaskRuntime) {
 		return
 	}
 	sort.Slice(taskRuntimes, func(i, j int) bool {
-		return compareWithSequence(taskRuntimes[i].Id, taskRuntimes[j].Id)
+		return compareWithSequence(taskRuntimes[i].ID, taskRuntimes[j].ID)
 	})
 }
 
@@ -84,7 +84,7 @@ func SortTaskAssignments(TaskAssignments []*definition.TaskAssignment) {
 		return
 	}
 	sort.Slice(TaskAssignments, func(i, j int) bool {
-		return TaskAssignments[i].ItemId < TaskAssignments[j].ItemId
+		return TaskAssignments[i].ItemID < TaskAssignments[j].ItemID
 	})
 }
 
@@ -93,7 +93,7 @@ func SortSchedulers(schedulers []*definition.Scheduler) {
 		return
 	}
 	sort.Slice(schedulers, func(i, j int) bool {
-		return compareWithSequence(schedulers[i].Id, schedulers[j].Id)
+		return compareWithSequence(schedulers[i].ID, schedulers[j].ID)
 	})
 }
 
@@ -136,7 +136,7 @@ func CanSchedule(ipList []string, hostname, ip string) bool {
 // ContainsTaskItem returns whether specific itemId existed in slice
 func ContainsTaskItem(arr []definition.TaskItem, itemId string) bool {
 	for _, item := range arr {
-		if item.Id == itemId {
+		if item.ID == itemId {
 			return true
 		}
 	}
@@ -149,7 +149,7 @@ func RemoveTaskItem(arr []definition.TaskItem, itemId string) []definition.TaskI
 		return arr
 	}
 	for i, item := range arr {
-		if item.Id == itemId {
+		if item.ID == itemId {
 			return append(arr[:i], arr[i+1:]...)
 		}
 	}

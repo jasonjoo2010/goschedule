@@ -113,22 +113,22 @@ func (s *MemoryStore) GetTasks() ([]*definition.Task, error) {
 func (s *MemoryStore) CreateTask(task *definition.Task) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
-	if _, ok := s.tasks[task.Id]; ok {
+	if _, ok := s.tasks[task.ID]; ok {
 		return store.AlreadyExist
 	}
 	t := *task
-	s.tasks[task.Id] = &t
+	s.tasks[task.ID] = &t
 	return nil
 }
 
 func (s *MemoryStore) UpdateTask(task *definition.Task) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
-	if _, ok := s.tasks[task.Id]; !ok {
+	if _, ok := s.tasks[task.ID]; !ok {
 		return store.NotExist
 	}
 	t := *task
-	s.tasks[task.Id] = &t
+	s.tasks[task.ID] = &t
 	return nil
 }
 
@@ -175,7 +175,7 @@ func (s *MemoryStore) SetTaskRuntime(runtime *definition.TaskRuntime) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	r := *runtime
-	s.taskRuntimes[taskRuntimeKey{runtime.StrategyId, runtime.TaskId, runtime.Id}] = &r
+	s.taskRuntimes[taskRuntimeKey{runtime.StrategyID, runtime.TaskID, runtime.ID}] = &r
 	return nil
 }
 
@@ -237,7 +237,7 @@ func (s *MemoryStore) SetTaskAssignment(assignment *definition.TaskAssignment) e
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	r := *assignment
-	s.taskAssignments[taskRuntimeKey{r.StrategyId, r.TaskId, r.ItemId}] = &r
+	s.taskAssignments[taskRuntimeKey{r.StrategyID, r.TaskID, r.ItemID}] = &r
 	return nil
 }
 
@@ -277,22 +277,22 @@ func (s *MemoryStore) GetStrategies() ([]*definition.Strategy, error) {
 func (s *MemoryStore) CreateStrategy(strategy *definition.Strategy) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
-	if _, ok := s.strategies[strategy.Id]; ok {
+	if _, ok := s.strategies[strategy.ID]; ok {
 		return store.AlreadyExist
 	}
 	copyStrategy := *strategy
-	s.strategies[strategy.Id] = &copyStrategy
+	s.strategies[strategy.ID] = &copyStrategy
 	return nil
 }
 
 func (s *MemoryStore) UpdateStrategy(strategy *definition.Strategy) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
-	if _, ok := s.strategies[strategy.Id]; !ok {
+	if _, ok := s.strategies[strategy.ID]; !ok {
 		return store.NotExist
 	}
 	copyStrategy := *strategy
-	s.strategies[strategy.Id] = &copyStrategy
+	s.strategies[strategy.ID] = &copyStrategy
 	return nil
 }
 
@@ -339,7 +339,7 @@ func (s *MemoryStore) SetStrategyRuntime(runtime *definition.StrategyRuntime) er
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	r := *runtime
-	s.runtimes[runtimeKey{runtime.StrategyId, runtime.SchedulerId}] = &r
+	s.runtimes[runtimeKey{runtime.StrategyID, runtime.SchedulerID}] = &r
 	return nil
 }
 
@@ -358,7 +358,7 @@ func (s *MemoryStore) RegisterScheduler(scheduler *definition.Scheduler) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	copyScheduler := *scheduler
-	s.schedulers[scheduler.Id] = &copyScheduler
+	s.schedulers[scheduler.ID] = &copyScheduler
 	return nil
 }
 func (s *MemoryStore) UnregisterScheduler(id string) error {

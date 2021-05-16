@@ -67,7 +67,7 @@ func New(cfg types.ScheduleConfig, store store.Store) (*ScheduleManager, error) 
 	}
 	uuid := utils.GenerateUUID(seq)
 	s := &definition.Scheduler{
-		Id:      uuid,
+		ID:      uuid,
 		Enabled: true,
 	}
 
@@ -102,7 +102,7 @@ func (s *ScheduleManager) Start() error {
 		s.registerInfo,
 		func() {
 			defer s.wg.Done()
-			defer s.cleanScheduler(s.scheduler.Id)
+			defer s.cleanScheduler(s.scheduler.ID)
 		})
 	go utils.LoopContext(s.ctx,
 		s.cfg.ScheduleInterval,
@@ -119,7 +119,7 @@ func (s *ScheduleManager) Shutdown() {
 }
 
 func (s *ScheduleManager) cleanup() {
-	s.cleanScheduler(s.scheduler.Id)
+	s.cleanScheduler(s.scheduler.ID)
 	if err := s.store.Close(); err != nil {
 		log.Errorf("Close store failed: %s", err.Error())
 	}

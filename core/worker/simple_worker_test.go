@@ -29,7 +29,7 @@ func (d *demoSimpleWorker) Stop(id, p string) error {
 
 func TestSimpleWorker(t *testing.T) {
 	strategy := definition.Strategy{
-		Id:   "s0",
+		ID:   "s0",
 		Kind: definition.FuncKind,
 		Bind: "demotest",
 		Extra: map[string]string{
@@ -45,7 +45,7 @@ func TestSimpleWorker(t *testing.T) {
 
 func TestSimpleWorkerInst(t *testing.T) {
 	strategy := definition.Strategy{
-		Id:   "s0",
+		ID:   "s0",
 		Kind: definition.FuncKind,
 		Bind: "demotestsingle",
 		Extra: map[string]string{

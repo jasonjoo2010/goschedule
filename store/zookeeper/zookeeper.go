@@ -215,7 +215,7 @@ func (s *ZookeeperStore) getItems(base_path string, getFunc getElementFunction) 
 // scheduler related
 
 func (s *ZookeeperStore) RegisterScheduler(scheduler *definition.Scheduler) error {
-	return s.setTemporaryNode(s.keyScheduler(scheduler.Id), scheduler)
+	return s.setTemporaryNode(s.keyScheduler(scheduler.ID), scheduler)
 }
 
 func (s *ZookeeperStore) UnregisterScheduler(id string) error {
@@ -292,7 +292,7 @@ func (s *ZookeeperStore) CreateTask(task *definition.Task) error {
 	if err != nil {
 		return err
 	}
-	_, err = s.conn.Create(s.keyTask(task.Id), data, 0, s.acl)
+	_, err = s.conn.Create(s.keyTask(task.ID), data, 0, s.acl)
 	if err == zk.ErrNodeExists {
 		return store.AlreadyExist
 	}
@@ -304,7 +304,7 @@ func (s *ZookeeperStore) UpdateTask(task *definition.Task) error {
 	if err != nil {
 		return err
 	}
-	_, err = s.conn.Set(s.keyTask(task.Id), data, -1)
+	_, err = s.conn.Set(s.keyTask(task.ID), data, -1)
 	if err == zk.ErrNoNode {
 		return store.NotExist
 	}
@@ -358,14 +358,14 @@ func (s *ZookeeperStore) SetTaskRuntime(runtime *definition.TaskRuntime) error {
 	if err != nil {
 		return err
 	}
-	key := s.keyTaskRuntime(runtime.StrategyId, runtime.TaskId, runtime.Id)
+	key := s.keyTaskRuntime(runtime.StrategyID, runtime.TaskID, runtime.ID)
 	if s.exists(key) {
 		_, err = s.conn.Set(key, data, -1)
 	} else {
 		_, err = s.conn.Create(key, data, 0, s.acl)
 		if err == zk.ErrNoNode {
 			// make sure parent existed and recreate
-			baseKey := s.keyTaskRuntimes(runtime.StrategyId, runtime.TaskId)
+			baseKey := s.keyTaskRuntimes(runtime.StrategyID, runtime.TaskID)
 			if !s.exists(baseKey) {
 				s.createPath(baseKey, true)
 			}
@@ -474,14 +474,14 @@ func (s *ZookeeperStore) SetTaskAssignment(assignment *definition.TaskAssignment
 	if err != nil {
 		return err
 	}
-	key := s.keyTaskAssignment(assignment.StrategyId, assignment.TaskId, assignment.ItemId)
+	key := s.keyTaskAssignment(assignment.StrategyID, assignment.TaskID, assignment.ItemID)
 	if s.exists(key) {
 		_, err = s.conn.Set(key, data, -1)
 	} else {
 		_, err = s.conn.Create(key, data, 0, s.acl)
 		if err == zk.ErrNoNode {
 			// make sure parent existed and recreate
-			baseKey := s.keyTaskAssignments(assignment.StrategyId, assignment.TaskId)
+			baseKey := s.keyTaskAssignments(assignment.StrategyID, assignment.TaskID)
 			if !s.exists(baseKey) {
 				s.createPath(baseKey, true)
 			}
@@ -539,7 +539,7 @@ func (s *ZookeeperStore) CreateStrategy(strategy *definition.Strategy) error {
 	if err != nil {
 		return err
 	}
-	_, err = s.conn.Create(s.keyStrategy(strategy.Id), data, 0, s.acl)
+	_, err = s.conn.Create(s.keyStrategy(strategy.ID), data, 0, s.acl)
 	if err == zk.ErrNodeExists {
 		return store.AlreadyExist
 	}
@@ -551,7 +551,7 @@ func (s *ZookeeperStore) UpdateStrategy(strategy *definition.Strategy) error {
 	if err != nil {
 		return err
 	}
-	_, err = s.conn.Set(s.keyStrategy(strategy.Id), data, -1)
+	_, err = s.conn.Set(s.keyStrategy(strategy.ID), data, -1)
 	if err == zk.ErrNoNode {
 		return store.NotExist
 	}
@@ -607,14 +607,14 @@ func (s *ZookeeperStore) SetStrategyRuntime(runtime *definition.StrategyRuntime)
 	if err != nil {
 		return err
 	}
-	key := s.keyStrategyRuntime(runtime.StrategyId, runtime.SchedulerId)
+	key := s.keyStrategyRuntime(runtime.StrategyID, runtime.SchedulerID)
 	if s.exists(key) {
 		_, err = s.conn.Set(key, data, -1)
 	} else {
 		_, err = s.conn.Create(key, data, zk.FlagEphemeral, s.acl)
 		if err == zk.ErrNoNode {
 			// make sure parent existed and recreate
-			baseKey := s.keyStrategyRuntimes(runtime.StrategyId)
+			baseKey := s.keyStrategyRuntimes(runtime.StrategyID)
 			if !s.exists(baseKey) {
 				s.createPath(baseKey, true)
 			}

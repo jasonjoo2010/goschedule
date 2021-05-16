@@ -18,8 +18,8 @@ const (
 )
 
 type Strategy struct {
-	Id                   string
-	IpList               []string // Which can be scheduled on
+	ID                   string
+	IPList               []string // Which can be scheduled on
 	MaxOnSingleScheduler int      // Max workers can be created on the same scheduler
 	Total                int      // Total workers should be created
 	Kind                 StrategyKind
@@ -41,8 +41,8 @@ func (s *Strategy) String() string {
 }
 
 type StrategyRuntime struct {
-	SchedulerId  string
-	StrategyId   string
+	SchedulerID  string
+	StrategyID   string
 	CreateAt     int64
 	Num          int
 	RequestedNum int
