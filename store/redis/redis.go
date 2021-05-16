@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"github.com/go-redis/redis"
-	"github.com/jasonjoo2010/goschedule/core/definition"
+	"github.com/jasonjoo2010/goschedule/definition"
 	"github.com/jasonjoo2010/goschedule/store"
 	"github.com/jasonjoo2010/goschedule/utils"
 )

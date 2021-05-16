@@ -7,7 +7,7 @@ package worker
 import (
 	"errors"
 
-	"github.com/jasonjoo2010/goschedule/core/definition"
+	"github.com/jasonjoo2010/goschedule/definition"
 	"github.com/jasonjoo2010/goschedule/log"
 	"github.com/jasonjoo2010/goschedule/types"
 )

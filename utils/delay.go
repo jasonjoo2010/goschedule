@@ -8,7 +8,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/jasonjoo2010/goschedule/core/definition"
+	"github.com/jasonjoo2010/goschedule/definition"
 	"github.com/robfig/cron/v3"
 	"github.com/sirupsen/logrus"
 )

@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jasonjoo2010/goschedule/core/definition"
+	"github.com/jasonjoo2010/goschedule/definition"
 )
 
 // shuffleRange shuffle specific range of slice

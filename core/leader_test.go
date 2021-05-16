@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jasonjoo2010/goschedule/core/definition"
 	"github.com/jasonjoo2010/goschedule/core/worker"
+	"github.com/jasonjoo2010/goschedule/definition"
 	"github.com/jasonjoo2010/goschedule/store/memory"
 	"github.com/stretchr/testify/assert"
 )
