@@ -7,7 +7,7 @@ package store
 import (
 	"errors"
 
-	"github.com/jasonjoo2010/goschedule/core/definition"
+	"github.com/jasonjoo2010/goschedule/definition"
 )
 
 // Period of validity for objects:

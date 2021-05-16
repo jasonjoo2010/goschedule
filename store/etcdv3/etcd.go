@@ -15,7 +15,7 @@ import (
 	"time"
 
 	etcd "github.com/coreos/etcd/clientv3"
-	"github.com/jasonjoo2010/goschedule/core/definition"
+	"github.com/jasonjoo2010/goschedule/definition"
 	"github.com/jasonjoo2010/goschedule/store"
 	"github.com/sirupsen/logrus"
 )

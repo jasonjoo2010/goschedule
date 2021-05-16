@@ -7,7 +7,7 @@ package utils
 import (
 	"testing"
 
-	"github.com/jasonjoo2010/goschedule/core/definition"
+	"github.com/jasonjoo2010/goschedule/definition"
 	"github.com/stretchr/testify/assert"
 )
 

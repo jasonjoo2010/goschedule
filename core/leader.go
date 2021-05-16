@@ -9,9 +9,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jasonjoo2010/goschedule/core/definition"
 	"github.com/jasonjoo2010/goschedule/core/worker"
 	"github.com/jasonjoo2010/goschedule/core/worker/task_worker"
+	"github.com/jasonjoo2010/goschedule/definition"
 	"github.com/jasonjoo2010/goschedule/log"
 	"github.com/jasonjoo2010/goschedule/store"
 	"github.com/jasonjoo2010/goschedule/types"

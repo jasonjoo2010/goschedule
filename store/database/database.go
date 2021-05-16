@@ -16,7 +16,7 @@ import (
 	"github.com/jasonjoo2010/godao"
 	"github.com/jasonjoo2010/godao/options"
 	"github.com/jasonjoo2010/godao/types"
-	"github.com/jasonjoo2010/goschedule/core/definition"
+	"github.com/jasonjoo2010/goschedule/definition"
 	"github.com/jasonjoo2010/goschedule/store"
 	"github.com/sirupsen/logrus"
 )

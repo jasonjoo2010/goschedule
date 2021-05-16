@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jasonjoo2010/goschedule/core/definition"
+	"github.com/jasonjoo2010/goschedule/definition"
 	"github.com/jasonjoo2010/goschedule/store"
 	"github.com/samuel/go-zookeeper/zk"
 	"github.com/sirupsen/logrus"
