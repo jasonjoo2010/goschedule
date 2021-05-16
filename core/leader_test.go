@@ -39,6 +39,9 @@ func (demo *DemoWorker) Stop(strategyId, parameter string) error {
 func TestStopAllWorkers(t *testing.T) {
 	// stop parellel
 	store := memory.New()
+	defer func() {
+		assert.Nil(t, store.Close())
+	}()
 	manager := newManager(t, store)
 	demo := &DemoWorker{}
 	worker.RegisterInstName("demoStopWorker", demo)
@@ -68,6 +71,9 @@ func TestStopAllWorkers(t *testing.T) {
 
 func TestLeader(t *testing.T) {
 	store := memory.New()
+	defer func() {
+		assert.Nil(t, store.Close())
+	}()
 	manager1 := newManager(t, store)
 	manager2 := newManager(t, store)
 
@@ -98,6 +104,9 @@ func TestLeader(t *testing.T) {
 
 func TestExpiredSchedulers(t *testing.T) {
 	store := memory.New()
+	defer func() {
+		assert.Nil(t, store.Close())
+	}()
 	manager := newManager(t, store)
 	managerExpired := newManager(t, store)
 
@@ -136,6 +145,9 @@ func TestExpiredSchedulers(t *testing.T) {
 
 func TestGenerateRuntimes(t *testing.T) {
 	store := memory.New()
+	defer func() {
+		assert.Nil(t, store.Close())
+	}()
 	manager := newManager(t, store)
 
 	store.CreateStrategy(&definition.Strategy{
@@ -164,6 +176,9 @@ func TestGenerateRuntimes(t *testing.T) {
 func TestAssign(t *testing.T) {
 	worker.RegisterName("demo", &DemoWorker{})
 	store := memory.New()
+	defer func() {
+		assert.Nil(t, store.Close())
+	}()
 	manager1 := newManager(t, store)
 	manager2 := newManager(t, store)
 	manager3 := newManager(t, store)

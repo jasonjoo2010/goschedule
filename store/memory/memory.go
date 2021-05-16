@@ -6,6 +6,7 @@ package memory
 
 import (
 	"encoding/json"
+	"errors"
 	"strconv"
 	"strings"
 	"sync"
@@ -20,6 +21,7 @@ import (
 type MemoryStore struct {
 	sequence        uint64
 	mutex           *sync.Mutex
+	closed          bool
 	taskItemsConfig map[string]int64
 	tasks           map[string]*definition.Task
 	strategies      map[string]*definition.Strategy
@@ -77,6 +79,13 @@ func (s *MemoryStore) Time() int64 {
 }
 
 func (s *MemoryStore) Close() error {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	if s.closed {
+		return errors.New("The store has been already closed")
+	}
+
+	s.closed = true
 	return nil
 }
 

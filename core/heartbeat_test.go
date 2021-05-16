@@ -32,6 +32,9 @@ func newManager(t *testing.T, store store.Store) *ScheduleManager {
 
 func TestHeartbeat(t *testing.T) {
 	store := memory.New()
+	defer func() {
+		assert.Nil(t, store.Close())
+	}()
 	manager1 := newManager(t, store)
 	manager2 := newManager(t, store)
 
