@@ -17,7 +17,7 @@ import (
 	etcd "github.com/coreos/etcd/clientv3"
 	"github.com/jasonjoo2010/goschedule/definition"
 	"github.com/jasonjoo2010/goschedule/store"
-	"github.com/sirupsen/logrus"
+	"github.com/jasonjoo2010/goschedule/log"
 )
 
 type Etcdv3Store struct {
@@ -112,7 +112,7 @@ func (s *Etcdv3Store) getObjects(basepath string, t reflect.Type) ([]interface{}
 		obj := reflect.New(t).Interface()
 		err = json.Unmarshal(n.Value, obj)
 		if err != nil {
-			logrus.Warn("Wrong data type during deserializing: " + string(n.Key))
+			log.Warnf("Wrong data type during deserializing: %s", string(n.Key))
 			continue
 		}
 		result = append(result, obj)

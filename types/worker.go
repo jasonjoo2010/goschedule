@@ -5,7 +5,7 @@ package types
 //	maybe you should carefully set a suitable timeout during shutdown.
 type FuncInterface func(strategyId, parameter string)
 
-// Worker manages data of scheduling for binded strategy
+// Worker manages data of scheduling for bond strategy
 type Worker interface {
 	Start(strategyId, parameter string) error
 	Stop(strategyId, parameter string) error

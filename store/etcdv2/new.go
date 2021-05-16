@@ -6,7 +6,7 @@ package etcdv2
 
 import (
 	etcd "github.com/coreos/etcd/client"
-	"github.com/sirupsen/logrus"
+	"github.com/jasonjoo2010/goschedule/log"
 )
 
 type Option func(cfg *etcd.Config)
@@ -27,7 +27,7 @@ func New(prefix string, addrs []string, opts ...Option) *Etcdv2Store {
 	}
 	c, err := etcd.New(cfg)
 	if err != nil {
-		logrus.Error("Create etcd store failed: ", err.Error())
+		log.Errorf("Create etcd store failed: %s", err.Error())
 		return nil
 	}
 	store := &Etcdv2Store{

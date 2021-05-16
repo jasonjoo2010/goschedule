@@ -4,7 +4,6 @@ go 1.14
 
 require (
 	github.com/go-sql-driver/mysql v1.5.0 // test
-	github.com/jasonjoo2010/godao v0.0.4
-	github.com/jasonjoo2010/goschedule v0.1.2
-	github.com/sirupsen/logrus v1.6.0
+	github.com/jasonjoo2010/godao v0.0.5
+	github.com/jasonjoo2010/goschedule v0.0.0-20210516044007-2be73766f01c
 )

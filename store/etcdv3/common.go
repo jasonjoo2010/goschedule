@@ -11,7 +11,7 @@ import (
 
 	etcd "github.com/coreos/etcd/clientv3"
 	"github.com/jasonjoo2010/goschedule/store"
-	"github.com/sirupsen/logrus"
+	"github.com/labstack/gommon/log"
 )
 
 func toStr(obj interface{}) (string, error) {
@@ -36,7 +36,7 @@ func (s *Etcdv3Store) exists(path string) bool {
 	ctx := context.Background()
 	resp, err := s.kvApi.Get(ctx, path)
 	if err != nil {
-		logrus.Warn("Failed to execute Exists(", path, "): ", err.Error())
+		log.Warnf("Failed to execute Exists(%s): %s", path, err.Error())
 		return false
 	}
 	return resp.Count > 0

@@ -9,7 +9,7 @@ import (
 	"time"
 
 	etcd "github.com/coreos/etcd/client"
-	"github.com/sirupsen/logrus"
+	"github.com/labstack/gommon/log"
 )
 
 func (s *Etcdv2Store) caculateTimeDifference() {
@@ -17,7 +17,7 @@ func (s *Etcdv2Store) caculateTimeDifference() {
 		TTL: 10 * time.Second,
 	})
 	if err != nil {
-		logrus.Warn("Create node failed: ", err.Error())
+		log.Warnf("Create node failed: %s", err.Error())
 		return
 	}
 	s.timeDelta = resp.Node.Expiration.Add(-10 * time.Second).Sub(time.Now())

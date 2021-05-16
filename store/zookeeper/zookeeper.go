@@ -11,9 +11,9 @@ import (
 	"time"
 
 	"github.com/jasonjoo2010/goschedule/definition"
+	"github.com/jasonjoo2010/goschedule/log"
 	"github.com/jasonjoo2010/goschedule/store"
 	"github.com/samuel/go-zookeeper/zk"
-	"github.com/sirupsen/logrus"
 )
 
 type getElementFunction func(string) (interface{}, error)
@@ -47,7 +47,7 @@ func NewFromConfig(config *ZookeeperStoreConfig) *ZookeeperStore {
 	}
 
 	conn, eventC, err := zk.Connect(config.Addrs, 60*time.Second,
-		zk.WithLogger(logrus.StandardLogger()),
+		zk.WithLogger(&logger{}),
 		zk.WithEventCallback(s.onEvent),
 		zk.WithLogInfo(true),
 	)
@@ -67,12 +67,12 @@ CHECK_LOOP:
 		select {
 		case event := <-eventC:
 			if event.State == zk.StateHasSession {
-				logrus.Info("Connected to zookeeper server: ", event.Server)
+				log.Infof("Connected to zookeeper server: %s", event.Server)
 				break CHECK_LOOP
 			}
 		case <-timeout.C:
 			conn.Close()
-			logrus.Error("Failed to connect to zookeeper server: timeout")
+			log.Error("Failed to connect to zookeeper server: timeout")
 			return nil
 		}
 	}
@@ -177,7 +177,7 @@ func (s *ZookeeperStore) keyTaskInfoBase() string {
 func (s *ZookeeperStore) setTemporaryNode(key string, obj interface{}) error {
 	data, err := json.Marshal(obj)
 	if err != nil {
-		logrus.Warn("encode obj failed: ", err.Error())
+		log.Warnf("encode obj failed: %s", err.Error())
 		return err
 	}
 	if s.exists(key) {
@@ -200,7 +200,7 @@ func (s *ZookeeperStore) getItems(base_path string, getFunc getElementFunction) 
 	for _, id := range ids {
 		obj, err := getFunc(id)
 		if err != nil {
-			logrus.Warn("Fetch object failed: ", err.Error())
+			log.Warnf("Fetch object failed: %s", err.Error())
 			continue
 		}
 		if obj == nil {
