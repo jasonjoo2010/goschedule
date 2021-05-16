@@ -18,6 +18,6 @@ func NewSimple(strategy definition.Strategy) (types.Worker, error) {
 		log.Warnf("Fetch simple worker failed for %s", strategy.Bind)
 		return nil, errors.New("No specific worker found: " + strategy.Bind)
 	}
-	log.Infof("Worker of strategy %s created", strategy.Id)
+	log.Infof("Worker of strategy %s created", strategy.ID)
 	return w, nil
 }

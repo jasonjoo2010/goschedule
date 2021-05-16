@@ -11,7 +11,7 @@ import (
 func (w *TaskWorker) registerTaskRuntime() {
 	now := time.Now().Unix() * 1000
 	w.runtime.NextRunnable = w.NextBeginTime
-	w.runtime.LastHeartBeat = now
+	w.runtime.LastHeartbeat = now
 	w.runtime.Version++
 	w.runtime.Statistics = w.Statistics
 	w.store.SetTaskRuntime(&w.runtime)

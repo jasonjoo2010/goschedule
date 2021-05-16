@@ -29,7 +29,7 @@ func TestSelectOnce(t *testing.T) {
 	w := newTaskWorker()
 	item1 := definition.TaskItem{}
 	w.taskItems = []definition.TaskItem{item1}
-	memoryStore.IncreaseTaskItemsConfigVersion(w.strategyDefine.Id, w.taskDefine.Id)
+	memoryStore.IncreaseTaskItemsConfigVersion(w.strategyDefine.ID, w.taskDefine.ID)
 	assert.Equal(t, 0, len(w.data))
 	w.Start("s0", "")
 	w.selectOnce()
@@ -44,7 +44,7 @@ func TestSelectQueued(t *testing.T) {
 	w.taskItems = []definition.TaskItem{item1}
 	w.data = make(chan interface{}, 1)
 	w.ctx = context.Background()
-	memoryStore.IncreaseTaskItemsConfigVersion(w.strategyDefine.Id, w.taskDefine.Id)
+	memoryStore.IncreaseTaskItemsConfigVersion(w.strategyDefine.ID, w.taskDefine.ID)
 	assert.Equal(t, 0, len(w.data))
 	w.selectOnce()
 	assert.Equal(t, 1, len(w.data))

@@ -5,7 +5,7 @@
 package core
 
 func (s *ScheduleManager) registerInfo() {
-	scheduler, err := s.store.GetScheduler(s.scheduler.Id)
+	scheduler, err := s.store.GetScheduler(s.scheduler.ID)
 	if err == nil {
 		// disabled support
 		if s.scheduler.Enabled != scheduler.Enabled {

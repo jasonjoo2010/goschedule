@@ -43,16 +43,16 @@ func TestStopAllWorkers(t *testing.T) {
 	demo := &DemoWorker{}
 	worker.RegisterInstName("demoStopWorker", demo)
 	store.CreateStrategy(&definition.Strategy{
-		Id:      "s0",
-		IpList:  []string{"localhost"},
+		ID:      "s0",
+		IPList:  []string{"localhost"},
 		Enabled: true,
 		Kind:    definition.SimpleKind,
 		Bind:    "demoStopWorker",
 		Total:   50,
 	})
 	store.CreateStrategy(&definition.Strategy{
-		Id:      "s1",
-		IpList:  []string{"localhost"},
+		ID:      "s1",
+		IPList:  []string{"localhost"},
 		Enabled: true,
 		Kind:    definition.SimpleKind,
 		Bind:    "demoStopWorker",
@@ -72,8 +72,8 @@ func TestLeader(t *testing.T) {
 	manager2 := newManager(t, store)
 
 	store.CreateStrategy(&definition.Strategy{
-		Id:      "s0",
-		IpList:  []string{"localhost"},
+		ID:      "s0",
+		IPList:  []string{"localhost"},
 		Enabled: true,
 	})
 
@@ -102,8 +102,8 @@ func TestExpiredSchedulers(t *testing.T) {
 	managerExpired := newManager(t, store)
 
 	store.CreateStrategy(&definition.Strategy{
-		Id:      "s0",
-		IpList:  []string{"localhost"},
+		ID:      "s0",
+		IPList:  []string{"localhost"},
 		Enabled: true,
 	})
 
@@ -139,13 +139,13 @@ func TestGenerateRuntimes(t *testing.T) {
 	manager := newManager(t, store)
 
 	store.CreateStrategy(&definition.Strategy{
-		Id:      "s0",
-		IpList:  []string{"localhost"},
+		ID:      "s0",
+		IPList:  []string{"localhost"},
 		Enabled: true,
 	})
 	store.CreateStrategy(&definition.Strategy{
-		Id:      "s1",
-		IpList:  []string{"127.0.0.1"},
+		ID:      "s1",
+		IPList:  []string{"127.0.0.1"},
 		Enabled: true,
 	})
 
@@ -177,8 +177,8 @@ func TestAssign(t *testing.T) {
 	TASK_COUNT := 2
 
 	store.CreateStrategy(&definition.Strategy{
-		Id:                   "S",
-		IpList:               []string{"127.0.0.1"},
+		ID:                   "S",
+		IPList:               []string{"127.0.0.1"},
 		Total:                TASK_COUNT,
 		Kind:                 definition.SimpleKind,
 		Bind:                 "demo",

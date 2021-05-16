@@ -38,7 +38,7 @@ const (
 )
 
 type Task struct {
-	Id             string
+	ID             string
 	IntervalNoData int // Whether to delay specified time (millis) if no data selected
 	Interval       int // Whether to delay specified time (millis) if something are selected out
 	FetchCount     int

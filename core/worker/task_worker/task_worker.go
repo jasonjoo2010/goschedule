@@ -164,28 +164,28 @@ func NewTask(strategy definition.Strategy, task definition.Task, store store.Sto
 		logrus.Warn("Create task worker failed: ", task.Bind)
 		return nil, errors.New("Convert to TaskBase failed: " + task.Bind)
 	}
-	logrus.Info("New task ", task.Id, " created")
+	logrus.Info("New task ", task.ID, " created")
 	w := &TaskWorker{
 		data:           make(chan interface{}, utils.Max(10, task.FetchCount*len(task.Items)*2)),
 		task:           inst,
 		strategyDefine: strategy,
-		ownSign:        utils.OwnSign(strategy.Id),
+		ownSign:        utils.OwnSign(strategy.ID),
 		taskDefine:     task,
 		taskItems:      make([]definition.TaskItem, 0),
 		parameter:      task.Parameter,
 		store:          store,
 		runtime: definition.TaskRuntime{
-			Id:            utils.GenerateUUID(sequence),
+			ID:            utils.GenerateUUID(sequence),
 			Version:       1,
-			CreateTime:    time.Now().Unix() * 1000,
-			LastHeartBeat: time.Now().Unix() * 1000,
+			Createtime:    time.Now().Unix() * 1000,
+			LastHeartbeat: time.Now().Unix() * 1000,
 			Hostname:      utils.GetHostName(),
-			Ip:            utils.GetHostIPv4(),
+			IP:            utils.GetHostIPv4(),
 			ExecutorCount: task.ExecutorCount,
-			SchedulerId:   schedulerId,
-			StrategyId:    strategy.Id,
-			OwnSign:       utils.OwnSign(strategy.Id),
-			TaskId:        task.Id,
+			SchedulerID:   schedulerId,
+			StrategyID:    strategy.ID,
+			OwnSign:       utils.OwnSign(strategy.ID),
+			TaskID:        task.ID,
 			Bind:          task.Bind,
 		},
 	}
@@ -299,7 +299,7 @@ func (w *TaskWorker) selectOnce() {
 		w.fillOrQueued(arr)
 		return
 	}
-	ver, err := w.store.GetTaskItemsConfigVersion(w.strategyDefine.Id, w.taskDefine.Id)
+	ver, err := w.store.GetTaskItemsConfigVersion(w.strategyDefine.ID, w.taskDefine.ID)
 	if err == nil && w.configVersion < ver {
 		// make sure no queued items
 		maxWait := time.Millisecond * 500
@@ -413,7 +413,7 @@ func (w *TaskWorker) Start(strategyId, parameter string) error {
 		w.registerTaskRuntime,
 		func() {
 			defer w.wg.Done()
-			defer w.store.RemoveTaskRuntime(w.runtime.StrategyId, w.runtime.TaskId, w.runtime.Id)
+			defer w.store.RemoveTaskRuntime(w.runtime.StrategyID, w.runtime.TaskID, w.runtime.ID)
 		})
 
 	// schedule loop

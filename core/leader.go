@@ -27,8 +27,8 @@ func (manager *ScheduleManager) isLeader(strategyId string) bool {
 	arr := make([]string, len(list))
 	var myself *definition.StrategyRuntime
 	for i, runtime := range list {
-		arr[i] = runtime.SchedulerId
-		if runtime.SchedulerId == manager.scheduler.Id {
+		arr[i] = runtime.SchedulerID
+		if runtime.SchedulerID == manager.scheduler.ID {
 			myself = runtime
 		}
 	}
@@ -38,7 +38,7 @@ func (manager *ScheduleManager) isLeader(strategyId string) bool {
 		return false
 	}
 	leaderUUID := utils.FetchLeader(arr)
-	if leaderUUID == manager.scheduler.Id {
+	if leaderUUID == manager.scheduler.ID {
 		return true
 	}
 	// double check the scheduler really exists
@@ -59,7 +59,7 @@ func (manager *ScheduleManager) cleanScheduler(schedulerId string) {
 		return
 	}
 	for _, strategy := range strategies {
-		manager.store.RemoveStrategyRuntime(strategy.Id, schedulerId)
+		manager.store.RemoveStrategyRuntime(strategy.ID, schedulerId)
 	}
 }
 
@@ -72,8 +72,8 @@ func (manager *ScheduleManager) clearExpiredSchedulers() {
 	now := time.Now().UnixNano() / 1e6
 	for _, scheduler := range schedulers {
 		if now-scheduler.LastHeartbeat > manager.cfg.DeathTimeout.Milliseconds() {
-			logrus.Info("Clear expired scheduler: ", scheduler.Id, ", last reach at ", scheduler.LastHeartbeat)
-			manager.cleanScheduler(scheduler.Id)
+			logrus.Info("Clear expired scheduler: ", scheduler.ID, ", last reach at ", scheduler.LastHeartbeat)
+			manager.cleanScheduler(scheduler.ID)
 		}
 	}
 }
@@ -87,8 +87,8 @@ func (manager *ScheduleManager) generateRuntimes() {
 	hostname := utils.GetHostName()
 	ip := utils.GetHostIPv4()
 	for _, strategy := range strategies {
-		canSchedule := utils.CanSchedule(strategy.IpList, hostname, ip)
-		runtime, err := manager.store.GetStrategyRuntime(strategy.Id, manager.scheduler.Id)
+		canSchedule := utils.CanSchedule(strategy.IPList, hostname, ip)
+		runtime, err := manager.store.GetStrategyRuntime(strategy.ID, manager.scheduler.ID)
 		if err != nil && err != store.NotExist {
 			continue
 		}
@@ -96,8 +96,8 @@ func (manager *ScheduleManager) generateRuntimes() {
 			// register runtimes if lack
 			if runtime == nil {
 				runtime = &definition.StrategyRuntime{
-					SchedulerId: manager.scheduler.Id,
-					StrategyId:  strategy.Id,
+					SchedulerID: manager.scheduler.ID,
+					StrategyID:  strategy.ID,
 					CreateAt:    time.Now().Unix() * 1000,
 				}
 				manager.store.SetStrategyRuntime(runtime)
@@ -105,8 +105,8 @@ func (manager *ScheduleManager) generateRuntimes() {
 		} else {
 			// clear runtimes if any
 			if runtime != nil {
-				logrus.Info("Clean runtime for strategy: ", runtime.StrategyId, " with scheduler ", runtime.SchedulerId)
-				manager.store.RemoveStrategyRuntime(strategy.Id, manager.scheduler.Id)
+				logrus.Info("Clean runtime for strategy: ", runtime.StrategyID, " with scheduler ", runtime.SchedulerID)
+				manager.store.RemoveStrategyRuntime(strategy.ID, manager.scheduler.ID)
 				// stop the workers
 				manager.stopWorkers(strategy)
 			}
@@ -125,13 +125,13 @@ func (manager *ScheduleManager) assign() {
 		if !strategy.Enabled {
 			continue
 		}
-		if !manager.isLeader(strategy.Id) {
+		if !manager.isLeader(strategy.ID) {
 			continue
 		}
 		// It's the leader to specific strategy
-		runtimes, err := manager.store.GetStrategyRuntimes(strategy.Id)
+		runtimes, err := manager.store.GetStrategyRuntimes(strategy.ID)
 		if err != nil {
-			logrus.Warn("Failed to fetch runtimes for ", strategy.Id, ": ", err.Error())
+			logrus.Warn("Failed to fetch runtimes for ", strategy.ID, ": ", err.Error())
 			continue
 		}
 		workerRequiredArr := utils.AssignWorkers(len(runtimes), strategy.Total, strategy.MaxOnSingleScheduler)
@@ -156,7 +156,7 @@ func (manager *ScheduleManager) createWorker(strategy *definition.Strategy) (typ
 		if err != nil {
 			return nil, err
 		}
-		return task_worker.NewTask(*strategy, *task, manager.store, manager.scheduler.Id)
+		return task_worker.NewTask(*strategy, *task, manager.store, manager.scheduler.ID)
 	default:
 		logrus.Error("Unknow Kind of strategy: ", strategy.Kind)
 		return nil, errors.New("Unknow strategy kind")
@@ -164,27 +164,27 @@ func (manager *ScheduleManager) createWorker(strategy *definition.Strategy) (typ
 }
 
 func (manager *ScheduleManager) maintainWorkers(strategy *definition.Strategy, target int) {
-	workersCnt := manager.workerSet.WorkersCountFor(strategy.Id)
+	workersCnt := manager.workerSet.WorkersCountFor(strategy.ID)
 	delta := target - workersCnt
 	if delta > 0 {
 		// increase
-		log.Infof("Increase worker by %d for %s on %s", delta, strategy.Id, manager.scheduler.Id)
+		log.Infof("Increase worker by %d for %s on %s", delta, strategy.ID, manager.scheduler.ID)
 		for i := 0; i < delta; i++ {
 			w, err := manager.createWorker(strategy)
 			if err != nil {
-				logrus.Error("Can't create worker for: ", strategy.Id)
+				logrus.Error("Can't create worker for: ", strategy.ID)
 				continue
 			}
-			go w.Start(strategy.Id, strategy.Parameter)
-			logrus.Info("Worker of strategy ", strategy.Id, " started")
-			manager.workerSet.AddWorker(strategy.Id, w)
+			go w.Start(strategy.ID, strategy.Parameter)
+			logrus.Info("Worker of strategy ", strategy.ID, " started")
+			manager.workerSet.AddWorker(strategy.ID, w)
 		}
 	} else if delta < 0 {
 		// decrease
-		logrus.Info("Decrease worker by ", -delta, " for ", strategy.Id, " on ", manager.scheduler.Id)
+		logrus.Info("Decrease worker by ", -delta, " for ", strategy.ID, " on ", manager.scheduler.ID)
 		for i := 0; i < -delta; i++ {
-			if w := manager.workerSet.RemoveWorker(strategy.Id); w != nil {
-				go w.Stop(strategy.Id, strategy.Parameter)
+			if w := manager.workerSet.RemoveWorker(strategy.ID); w != nil {
+				go w.Stop(strategy.ID, strategy.Parameter)
 			}
 		}
 	}
@@ -201,22 +201,22 @@ func (manager *ScheduleManager) adjustWorkers() {
 		if !strategy.Enabled {
 			continue
 		}
-		runtime, err := manager.store.GetStrategyRuntime(strategy.Id, manager.scheduler.Id)
+		runtime, err := manager.store.GetStrategyRuntime(strategy.ID, manager.scheduler.ID)
 		if err == store.NotExist {
 			continue
 		}
 		if err != nil {
-			logrus.Warn("Failed to fetch runtime for ", strategy.Id, ": ", err.Error())
+			logrus.Warn("Failed to fetch runtime for ", strategy.ID, ": ", err.Error())
 			continue
 		}
 		if runtime.RequestedNum < 0 {
-			logrus.Error("Requested count of workers in runtime is set to a wrong number: ", runtime.RequestedNum, " for ", strategy.Id)
+			logrus.Error("Requested count of workers in runtime is set to a wrong number: ", runtime.RequestedNum, " for ", strategy.ID)
 			runtime.RequestedNum = 0
 		}
-		workersCnt := manager.workerSet.WorkersCountFor(runtime.StrategyId)
+		workersCnt := manager.workerSet.WorkersCountFor(runtime.StrategyID)
 		if workersCnt != runtime.RequestedNum {
 			manager.maintainWorkers(strategy, runtime.RequestedNum)
-			workersCnt = manager.workerSet.WorkersCountFor(runtime.StrategyId)
+			workersCnt = manager.workerSet.WorkersCountFor(runtime.StrategyID)
 		}
 		// update info in storage
 		if runtime.Num != workersCnt {
@@ -237,9 +237,9 @@ func (manager *ScheduleManager) schedule() {
 
 // stopWorkers stop group of workers binded to specific strategy
 func (manager *ScheduleManager) stopWorkers(strategy *definition.Strategy) error {
-	defer manager.workerSet.Delete(strategy.Id)
+	defer manager.workerSet.Delete(strategy.ID)
 
-	workers := manager.workerSet.WorkersFor(strategy.Id)
+	workers := manager.workerSet.WorkersFor(strategy.ID)
 	if len(workers) == 0 {
 		return nil
 	}
@@ -251,10 +251,10 @@ func (manager *ScheduleManager) stopWorkers(strategy *definition.Strategy) error
 			defer wg.Done()
 			defer func() {
 				if err := recover(); err != nil {
-					log.Errorf("Stop worker %s failed: %v", strategy.Id, err)
+					log.Errorf("Stop worker %s failed: %v", strategy.ID, err)
 				}
 			}()
-			w.Stop(strategy.Id, strategy.Parameter)
+			w.Stop(strategy.ID, strategy.Parameter)
 		}(w)
 	}
 
@@ -270,7 +270,7 @@ func (manager *ScheduleManager) stopAllWorkers() {
 		if strategy == nil {
 			logrus.Warn("Strategy not found: ", name)
 			strategy = &definition.Strategy{
-				Id:        name,
+				ID:        name,
 				Parameter: "",
 			}
 		}

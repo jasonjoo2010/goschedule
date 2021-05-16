@@ -36,8 +36,8 @@ func TestHeartbeat(t *testing.T) {
 	manager2 := newManager(t, store)
 
 	store.CreateStrategy(&definition.Strategy{
-		Id:      "test",
-		IpList:  []string{"127.0.0.1"},
+		ID:      "test",
+		IPList:  []string{"127.0.0.1"},
 		Enabled: true,
 	})
 
