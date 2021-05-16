@@ -269,7 +269,7 @@ func (s *RedisStore) GetTasks() ([]*definition.Task, error) {
 }
 
 func (s *RedisStore) CreateTask(task *definition.Task) error {
-	if _, err := s.GetTask(task.Id); err == nil {
+	if _, err := s.GetTask(task.ID); err == nil {
 		return store.AlreadyExist
 	}
 
@@ -278,19 +278,19 @@ func (s *RedisStore) CreateTask(task *definition.Task) error {
 	if err != nil {
 		return err
 	}
-	_, err = s.client.HSetNX(key, task.Id, string(data)).Result()
+	_, err = s.client.HSetNX(key, task.ID, string(data)).Result()
 	return err
 }
 
 func (s *RedisStore) UpdateTask(task *definition.Task) error {
-	if _, err := s.GetTask(task.Id); err != nil {
+	if _, err := s.GetTask(task.ID); err != nil {
 		return store.NotExist
 	}
 	data, err := json.Marshal(task)
 	if err != nil {
 		return err
 	}
-	_, err = s.client.HSet(s.keyTasks(), task.Id, string(data)).Result()
+	_, err = s.client.HSet(s.keyTasks(), task.ID, string(data)).Result()
 	return err
 }
 
@@ -332,12 +332,12 @@ func (s *RedisStore) GetTaskRuntimes(strategyId, taskId string) ([]*definition.T
 }
 
 func (s *RedisStore) SetTaskRuntime(runtime *definition.TaskRuntime) error {
-	key := s.keyTaskRuntimes(runtime.StrategyId, runtime.TaskId)
+	key := s.keyTaskRuntimes(runtime.StrategyID, runtime.TaskID)
 	data, err := json.Marshal(runtime)
 	if err != nil {
 		return err
 	}
-	_, err = s.client.HSet(key, runtime.Id, string(data)).Result()
+	_, err = s.client.HSet(key, runtime.ID, string(data)).Result()
 	return err
 }
 
@@ -392,12 +392,12 @@ func (s *RedisStore) GetTaskAssignments(strategyId, taskId string) ([]*definitio
 }
 
 func (s *RedisStore) SetTaskAssignment(assignment *definition.TaskAssignment) error {
-	key := s.keyTaskAssignments(assignment.StrategyId, assignment.TaskId)
+	key := s.keyTaskAssignments(assignment.StrategyID, assignment.TaskID)
 	data, err := json.Marshal(assignment)
 	if err != nil {
 		return err
 	}
-	_, err = s.client.HSet(key, assignment.ItemId, string(data)).Result()
+	_, err = s.client.HSet(key, assignment.ItemID, string(data)).Result()
 	return err
 }
 
@@ -444,7 +444,7 @@ func (s *RedisStore) GetStrategies() ([]*definition.Strategy, error) {
 }
 
 func (s *RedisStore) CreateStrategy(strategy *definition.Strategy) error {
-	if _, err := s.GetStrategy(strategy.Id); err == nil {
+	if _, err := s.GetStrategy(strategy.ID); err == nil {
 		return store.AlreadyExist
 	}
 
@@ -453,19 +453,19 @@ func (s *RedisStore) CreateStrategy(strategy *definition.Strategy) error {
 	if err != nil {
 		return err
 	}
-	_, err = s.client.HSetNX(key, strategy.Id, string(data)).Result()
+	_, err = s.client.HSetNX(key, strategy.ID, string(data)).Result()
 	return err
 }
 
 func (s *RedisStore) UpdateStrategy(strategy *definition.Strategy) error {
-	if _, err := s.GetStrategy(strategy.Id); err != nil {
+	if _, err := s.GetStrategy(strategy.ID); err != nil {
 		return store.NotExist
 	}
 	data, err := json.Marshal(strategy)
 	if err != nil {
 		return err
 	}
-	_, err = s.client.HSet(s.keyStrategies(), strategy.Id, string(data)).Result()
+	_, err = s.client.HSet(s.keyStrategies(), strategy.ID, string(data)).Result()
 	return err
 }
 
@@ -507,12 +507,12 @@ func (s *RedisStore) GetStrategyRuntimes(strategyId string) ([]*definition.Strat
 }
 
 func (s *RedisStore) SetStrategyRuntime(runtime *definition.StrategyRuntime) error {
-	key := s.keyRuntimes(runtime.StrategyId)
+	key := s.keyRuntimes(runtime.StrategyID)
 	data, err := json.Marshal(runtime)
 	if err != nil {
 		return err
 	}
-	_, err = s.client.HSet(key, runtime.SchedulerId, string(data)).Result()
+	_, err = s.client.HSet(key, runtime.SchedulerID, string(data)).Result()
 	return err
 }
 
@@ -533,7 +533,7 @@ func (s *RedisStore) RegisterScheduler(scheduler *definition.Scheduler) error {
 		// Now just ignore it
 		return errors.New("Serialize scheduler object failed")
 	}
-	s.client.HSet(key, scheduler.Id, string(data)).Result()
+	s.client.HSet(key, scheduler.ID, string(data)).Result()
 	return nil
 }
 func (s *RedisStore) UnregisterScheduler(id string) error {
@@ -573,10 +573,10 @@ func (s *RedisStore) GetSchedulers() ([]*definition.Scheduler, error) {
 				continue
 			}
 			obj, err := parseScheduler(item, nil)
-			if err != nil || keys_visited[obj.Id] {
+			if err != nil || keys_visited[obj.ID] {
 				continue
 			}
-			keys_visited[obj.Id] = true
+			keys_visited[obj.ID] = true
 			list = append(list, obj)
 		}
 		if c == 0 {
@@ -622,7 +622,7 @@ func (s *RedisStore) Dump() string {
 	strategies, _ := s.GetStrategies()
 	taskMap := make(map[string]*definition.Task, len(tasks))
 	for _, task := range tasks {
-		taskMap[task.Id] = task
+		taskMap[task.ID] = task
 	}
 	for _, strategy := range strategies {
 		if strategy.Kind != definition.TaskKind {
@@ -632,9 +632,9 @@ func (s *RedisStore) Dump() string {
 		if task == nil {
 			continue
 		}
-		b.WriteString(s.keyTaskRuntimes(strategy.Id, task.Id))
+		b.WriteString(s.keyTaskRuntimes(strategy.ID, task.ID))
 		b.WriteString(":\n")
-		dumpMap(b, s.client.HGetAll(s.keyTaskRuntimes(strategy.Id, task.Id)).Val())
+		dumpMap(b, s.client.HGetAll(s.keyTaskRuntimes(strategy.ID, task.ID)).Val())
 	}
 
 	b.WriteString("\nTaskItemsConfigVersion:\n")
@@ -651,9 +651,9 @@ func (s *RedisStore) Dump() string {
 		if task == nil {
 			continue
 		}
-		b.WriteString(s.keyTaskAssignments(strategy.Id, task.Id))
+		b.WriteString(s.keyTaskAssignments(strategy.ID, task.ID))
 		b.WriteString(":\n")
-		dumpMap(b, s.client.HGetAll(s.keyTaskAssignments(strategy.Id, task.Id)).Val())
+		dumpMap(b, s.client.HGetAll(s.keyTaskAssignments(strategy.ID, task.ID)).Val())
 	}
 
 	b.WriteString("\nStrategies:\n")
@@ -663,9 +663,9 @@ func (s *RedisStore) Dump() string {
 
 	b.WriteString("\nRuntimes:\n")
 	for _, strategy := range strategies {
-		b.WriteString(s.keyRuntimes(strategy.Id))
+		b.WriteString(s.keyRuntimes(strategy.ID))
 		b.WriteString(":\n")
-		dumpMap(b, s.client.HGetAll(s.keyRuntimes(strategy.Id)).Val())
+		dumpMap(b, s.client.HGetAll(s.keyRuntimes(strategy.ID)).Val())
 	}
 
 	b.WriteString("\nSchedulers:\n")

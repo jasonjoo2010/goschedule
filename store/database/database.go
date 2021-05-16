@@ -17,8 +17,8 @@ import (
 	"github.com/jasonjoo2010/godao/options"
 	"github.com/jasonjoo2010/godao/types"
 	"github.com/jasonjoo2010/goschedule/definition"
+	"github.com/jasonjoo2010/goschedule/log"
 	"github.com/jasonjoo2010/goschedule/store"
-	"github.com/sirupsen/logrus"
 )
 
 type DatabaseStore struct {
@@ -114,7 +114,7 @@ func (s *DatabaseStore) getObjects(base_key string, t reflect.Type) ([]interface
 		obj := reflect.New(t).Interface()
 		err = json.Unmarshal([]byte(info.Value), obj)
 		if err != nil {
-			logrus.Warn("Wrong data type during deserializing: ", info.Key)
+			log.Warnf("Wrong data type during deserializing: %s", info.Key)
 			continue
 		}
 		result = append(result, obj)
@@ -138,7 +138,7 @@ func (s *DatabaseStore) Sequence() (uint64, error) {
 	for retries > 0 {
 		obj, err := s.dao.SelectOneBy(context.Background(), "Key", key)
 		if err != nil {
-			logrus.Warn("Failed to fetch info from database: ", err.Error())
+			log.Warnf("Failed to fetch info from database: %s", err.Error())
 			return 0, err
 		}
 		if obj == nil {
@@ -181,7 +181,7 @@ func (s *DatabaseStore) RegisterScheduler(scheduler *definition.Scheduler) error
 	if scheduler == nil {
 		return errors.New("scheduler should not be nil")
 	}
-	return s.updateOrInsert(s.keyScheduler(scheduler.Id), scheduler)
+	return s.updateOrInsert(s.keyScheduler(scheduler.ID), scheduler)
 }
 func (s *DatabaseStore) UnregisterScheduler(id string) error {
 	err := s.remove(s.keyScheduler(id))
@@ -248,13 +248,13 @@ func (s *DatabaseStore) CreateTask(task *definition.Task) error {
 	if task == nil {
 		return errors.New("task should not be nil")
 	}
-	return s.create(s.keyTask(task.Id), task)
+	return s.create(s.keyTask(task.ID), task)
 }
 func (s *DatabaseStore) UpdateTask(task *definition.Task) error {
 	if task == nil {
 		return errors.New("task should not be nil")
 	}
-	return s.update(s.keyTask(task.Id), task)
+	return s.update(s.keyTask(task.ID), task)
 }
 func (s *DatabaseStore) RemoveTask(id string) error {
 	return s.remove(s.keyTask(id))
@@ -290,7 +290,7 @@ func (s *DatabaseStore) SetTaskRuntime(runtime *definition.TaskRuntime) error {
 	if runtime == nil {
 		return errors.New("task runtime should not be nil")
 	}
-	return s.updateOrInsert(s.keyTaskRuntime(runtime.StrategyId, runtime.TaskId, runtime.Id), runtime)
+	return s.updateOrInsert(s.keyTaskRuntime(runtime.StrategyID, runtime.TaskID, runtime.ID), runtime)
 }
 func (s *DatabaseStore) RemoveTaskRuntime(strategyId, taskId, id string) error {
 	err := s.remove(s.keyTaskRuntime(strategyId, taskId, id))
@@ -365,7 +365,7 @@ func (s *DatabaseStore) SetTaskAssignment(assignment *definition.TaskAssignment)
 	if assignment == nil {
 		return errors.New("assignment should not be nil")
 	}
-	return s.updateOrInsert(s.keyTaskAssignment(assignment.StrategyId, assignment.TaskId, assignment.ItemId), assignment)
+	return s.updateOrInsert(s.keyTaskAssignment(assignment.StrategyID, assignment.TaskID, assignment.ItemID), assignment)
 }
 func (s *DatabaseStore) RemoveTaskAssignment(strategyId, taskId, itemId string) error {
 	err := s.remove(s.keyTaskAssignment(strategyId, taskId, itemId))
@@ -403,13 +403,13 @@ func (s *DatabaseStore) CreateStrategy(strategy *definition.Strategy) error {
 	if strategy == nil {
 		return errors.New("strategy should not be nil")
 	}
-	return s.create(s.keyStrategy(strategy.Id), strategy)
+	return s.create(s.keyStrategy(strategy.ID), strategy)
 }
 func (s *DatabaseStore) UpdateStrategy(strategy *definition.Strategy) error {
 	if strategy == nil {
 		return errors.New("strategy should not be nil")
 	}
-	return s.update(s.keyStrategy(strategy.Id), strategy)
+	return s.update(s.keyStrategy(strategy.ID), strategy)
 }
 func (s *DatabaseStore) RemoveStrategy(id string) error {
 	return s.remove(s.keyStrategy(id))
@@ -442,7 +442,7 @@ func (s *DatabaseStore) SetStrategyRuntime(runtime *definition.StrategyRuntime) 
 	if runtime == nil {
 		return errors.New("runtime should not be nil")
 	}
-	return s.updateOrInsert(s.keyRuntime(runtime.StrategyId, runtime.SchedulerId), runtime)
+	return s.updateOrInsert(s.keyRuntime(runtime.StrategyID, runtime.SchedulerID), runtime)
 }
 func (s *DatabaseStore) RemoveStrategyRuntime(strategyId, schedulerId string) error {
 	err := s.remove(s.keyRuntime(strategyId, schedulerId))
@@ -463,7 +463,7 @@ func (s *DatabaseStore) Dump() string {
 		condition.Page(page, size)
 		list, err := s.dao.Select(context.Background(), condition.Data())
 		if err != nil {
-			logrus.Warn("Error occurred when dumping: ", err.Error())
+			log.Warnf("Error occurred when dumping: %s", err.Error())
 			break
 		}
 		if len(list) < 1 {

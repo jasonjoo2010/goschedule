@@ -7,13 +7,13 @@ package zookeeper
 import (
 	"time"
 
+	"github.com/jasonjoo2010/goschedule/log"
 	"github.com/samuel/go-zookeeper/zk"
-	"github.com/sirupsen/logrus"
 )
 
 func (s *ZookeeperStore) onEvent(event zk.Event) {
 	// should not block in this function because it's in synchronous mode
-	logrus.Info("recieve: ", event)
+	log.Infof("receive: %s", event.State.String())
 }
 
 func (s *ZookeeperStore) determineTimeDelta() {
@@ -22,13 +22,13 @@ func (s *ZookeeperStore) determineTimeDelta() {
 	keyTime := s.prefix + "/time"
 	keyTime, err = s.conn.Create(keyTime, nil, zk.FlagEphemeral|zk.FlagSequence, s.acl)
 	if err != nil {
-		logrus.Warn("Create testing time key failed: ", err.Error())
+		log.Warnf("Create testing time key failed: %s", err.Error())
 	} else {
 		now := time.Now().UnixNano() / 1e6
 		_, stat, _ := s.conn.Get(keyTime)
 		if stat != nil && stat.Ctime > 0 {
 			s.timeDelta = time.Duration(stat.Ctime-now) * time.Millisecond
-			logrus.Info("Time difference compared to server is ", s.timeDelta)
+			log.Infof("Time difference compared to server is %v", s.timeDelta)
 		}
 		s.removePath(keyTime, false)
 	}
@@ -36,10 +36,10 @@ func (s *ZookeeperStore) determineTimeDelta() {
 
 func (s *ZookeeperStore) verifyPrefix() {
 	if !s.exists(s.prefix) {
-		logrus.Info("Initial goschedule base path")
+		log.Info("Initial goschedule base path")
 		err := s.createPath(s.prefix, true)
 		if err != nil {
-			logrus.Error("Failed to initial base path: ", err.Error())
+			log.Errorf("Failed to initial base path: %s", err.Error())
 		}
 	}
 	s.createPath(s.keySchedulers(), true)

@@ -8,13 +8,13 @@ import (
 	"container/list"
 	"strings"
 
-	"github.com/sirupsen/logrus"
+	"github.com/jasonjoo2010/goschedule/log"
 )
 
 func (s *ZookeeperStore) exists(path string) bool {
 	result, _, err := s.conn.Exists(path)
 	if err != nil {
-		logrus.Warn("Failed to execute Exists(", path, "): ", err.Error())
+		log.Warnf("Failed to execute Exists(%s): ", path, err.Error())
 		return false
 	}
 	return result && err == nil
@@ -32,7 +32,7 @@ func (s *ZookeeperStore) getChildren(path string, recursive bool) []string {
 			queue.Remove(item)
 			children, _, err := s.conn.Children(p)
 			if err != nil {
-				logrus.Warn("Fetch children failed for ", p, ": ", err.Error())
+				log.Warnf("Fetch children failed for %s: %s", p, err.Error())
 				continue
 			}
 			for _, child := range children {
@@ -76,7 +76,7 @@ func (s *ZookeeperStore) createPath(path string, createParent bool) error {
 		}
 		_, err := s.conn.Create(path, nil, 0, s.acl)
 		if err != nil {
-			logrus.Warn("Failed to create path ", path, ": ", err.Error())
+			log.Warnf("Failed to create path %s: %s", path, err.Error())
 			return err
 		}
 	}

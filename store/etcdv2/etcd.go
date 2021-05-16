@@ -17,7 +17,7 @@ import (
 	etcd "github.com/coreos/etcd/client"
 	"github.com/jasonjoo2010/goschedule/definition"
 	"github.com/jasonjoo2010/goschedule/store"
-	"github.com/sirupsen/logrus"
+	"github.com/labstack/gommon/log"
 )
 
 type Etcdv2Store struct {
@@ -111,7 +111,7 @@ func (s *Etcdv2Store) getObjects(key string, t reflect.Type) ([]interface{}, err
 		obj := reflect.New(t).Interface()
 		err = json.Unmarshal([]byte(n.Value), obj)
 		if err != nil {
-			logrus.Warn("Wrong data type during deserializing: " + n.Key)
+			log.Warnf("Wrong data type during deserializing: %s", n.Key)
 			continue
 		}
 		result = append(result, obj)
@@ -156,7 +156,7 @@ func (s *Etcdv2Store) RegisterScheduler(scheduler *definition.Scheduler) error {
 	if scheduler == nil {
 		return errors.New("scheduler should not be nil")
 	}
-	return s.update(s.keyScheduler(scheduler.Id), scheduler, false)
+	return s.update(s.keyScheduler(scheduler.ID), scheduler, false)
 }
 
 func (s *Etcdv2Store) UnregisterScheduler(id string) error {
@@ -225,14 +225,14 @@ func (s *Etcdv2Store) CreateTask(task *definition.Task) error {
 	if task == nil {
 		return errors.New("task should not be nil")
 	}
-	return s.create(s.keyTask(task.Id), task)
+	return s.create(s.keyTask(task.ID), task)
 }
 
 func (s *Etcdv2Store) UpdateTask(task *definition.Task) error {
 	if task == nil {
 		return errors.New("task should not be nil")
 	}
-	return s.update(s.keyTask(task.Id), task, true)
+	return s.update(s.keyTask(task.ID), task, true)
 }
 
 func (s *Etcdv2Store) RemoveTask(id string) error {
@@ -268,7 +268,7 @@ func (s *Etcdv2Store) SetTaskRuntime(runtime *definition.TaskRuntime) error {
 	if runtime == nil {
 		return errors.New("task runtime should not be nil")
 	}
-	return s.update(s.keyTaskRuntime(runtime.StrategyId, runtime.TaskId, runtime.Id), runtime, false)
+	return s.update(s.keyTaskRuntime(runtime.StrategyID, runtime.TaskID, runtime.ID), runtime, false)
 }
 
 func (s *Etcdv2Store) RemoveTaskRuntime(strategyId, taskId, id string) error {
@@ -345,7 +345,7 @@ func (s *Etcdv2Store) SetTaskAssignment(assignment *definition.TaskAssignment) e
 	if assignment == nil {
 		return errors.New("assignment should not be nil")
 	}
-	return s.update(s.keyTaskAssignment(assignment.StrategyId, assignment.TaskId, assignment.ItemId), assignment, false)
+	return s.update(s.keyTaskAssignment(assignment.StrategyID, assignment.TaskID, assignment.ItemID), assignment, false)
 }
 
 func (s *Etcdv2Store) RemoveTaskAssignment(strategyId, taskId, itemId string) error {
@@ -386,14 +386,14 @@ func (s *Etcdv2Store) CreateStrategy(strategy *definition.Strategy) error {
 	if strategy == nil {
 		return errors.New("strategy should not be nil")
 	}
-	return s.create(s.keyStrategy(strategy.Id), strategy)
+	return s.create(s.keyStrategy(strategy.ID), strategy)
 }
 
 func (s *Etcdv2Store) UpdateStrategy(strategy *definition.Strategy) error {
 	if strategy == nil {
 		return errors.New("strategy should not be nil")
 	}
-	return s.update(s.keyStrategy(strategy.Id), strategy, true)
+	return s.update(s.keyStrategy(strategy.ID), strategy, true)
 }
 
 func (s *Etcdv2Store) RemoveStrategy(id string) error {
@@ -429,7 +429,7 @@ func (s *Etcdv2Store) SetStrategyRuntime(runtime *definition.StrategyRuntime) er
 	if runtime == nil {
 		return errors.New("runtime should not be nil")
 	}
-	return s.update(s.keyRuntime(runtime.StrategyId, runtime.SchedulerId), runtime, false)
+	return s.update(s.keyRuntime(runtime.StrategyID, runtime.SchedulerID), runtime, false)
 }
 
 func (s *Etcdv2Store) RemoveStrategyRuntime(strategyId, schedulerId string) error {

@@ -10,7 +10,7 @@ import (
 	"errors"
 
 	etcd "github.com/coreos/etcd/client"
-	"github.com/sirupsen/logrus"
+	"github.com/labstack/gommon/log"
 )
 
 func (s *Etcdv2Store) exists(path string) bool {
@@ -22,7 +22,7 @@ func (s *Etcdv2Store) exists(path string) bool {
 				return false
 			}
 		}
-		logrus.Warn("Failed to execute Exists(", path, "): ", err.Error())
+		log.Warnf("Failed to execute Exists(%s): %s", path, err.Error())
 		return false
 	}
 	return true
