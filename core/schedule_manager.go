@@ -120,14 +120,11 @@ func (s *ScheduleManager) Shutdown() {
 
 func (s *ScheduleManager) cleanup() {
 	s.cleanScheduler(s.scheduler.ID)
-	if err := s.store.Close(); err != nil {
-		log.Errorf("Close store failed: %s", err.Error())
-	}
-
 	log.Info("Manager has been shutdown")
 }
 
 // Shutdown close the manager. Please use `Close()` instead
+//	And it won't close the store it uses anymore. The lifecycle of the store should be maintained outside.
 func (s *ScheduleManager) Close() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
