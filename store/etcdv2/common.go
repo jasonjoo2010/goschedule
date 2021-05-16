@@ -9,8 +9,8 @@ import (
 	"encoding/json"
 	"errors"
 
-	etcd "github.com/coreos/etcd/client"
 	"github.com/labstack/gommon/log"
+	etcd "go.etcd.io/etcd/client"
 )
 
 func (s *Etcdv2Store) exists(path string) bool {

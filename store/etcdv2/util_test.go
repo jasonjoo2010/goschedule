@@ -8,9 +8,9 @@ import (
 	"errors"
 	"testing"
 
-	etcd "github.com/coreos/etcd/client"
 	"github.com/jasonjoo2010/goschedule/store"
 	"github.com/stretchr/testify/assert"
+	etcd "go.etcd.io/etcd/client"
 )
 
 func TestConvertError(t *testing.T) {

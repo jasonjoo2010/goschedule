@@ -5,8 +5,8 @@
 package etcdv2
 
 import (
-	etcd "github.com/coreos/etcd/client"
 	"github.com/jasonjoo2010/goschedule/store"
+	etcd "go.etcd.io/etcd/client"
 )
 
 // convertError try to convert error into internal type

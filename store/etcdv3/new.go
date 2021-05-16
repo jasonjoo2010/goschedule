@@ -7,7 +7,7 @@ package etcdv3
 import (
 	"errors"
 
-	etcd "github.com/coreos/etcd/clientv3"
+	etcd "go.etcd.io/etcd/v3/clientv3"
 )
 
 type Option func(cfg *etcd.Config)

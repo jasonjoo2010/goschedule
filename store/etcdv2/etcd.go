@@ -14,10 +14,10 @@ import (
 	"strings"
 	"time"
 
-	etcd "github.com/coreos/etcd/client"
 	"github.com/jasonjoo2010/goschedule/definition"
 	"github.com/jasonjoo2010/goschedule/store"
 	"github.com/labstack/gommon/log"
+	etcd "go.etcd.io/etcd/client"
 )
 
 type Etcdv2Store struct {

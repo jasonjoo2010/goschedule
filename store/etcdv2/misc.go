@@ -8,8 +8,8 @@ import (
 	"context"
 	"time"
 
-	etcd "github.com/coreos/etcd/client"
 	"github.com/labstack/gommon/log"
+	etcd "go.etcd.io/etcd/client"
 )
 
 func (s *Etcdv2Store) caculateTimeDifference() {

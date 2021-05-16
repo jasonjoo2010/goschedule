@@ -5,8 +5,8 @@
 package etcdv2
 
 import (
-	etcd "github.com/coreos/etcd/client"
 	"github.com/jasonjoo2010/goschedule/log"
+	etcd "go.etcd.io/etcd/client"
 )
 
 type Option func(cfg *etcd.Config)

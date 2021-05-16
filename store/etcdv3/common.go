@@ -9,9 +9,9 @@ import (
 	"encoding/json"
 	"errors"
 
-	etcd "github.com/coreos/etcd/clientv3"
 	"github.com/jasonjoo2010/goschedule/store"
 	"github.com/labstack/gommon/log"
+	etcd "go.etcd.io/etcd/v3/clientv3"
 )
 
 func toStr(obj interface{}) (string, error) {
