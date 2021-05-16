@@ -7,8 +7,8 @@ github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSs
 github.com/golang/protobuf v1.3.1/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U=
 github.com/google/gofuzz v1.0.0/go.mod h1:dBl0BpW6vV/+mYPU4Po3pmUjxk6FQPldtuIdl/M65Eg=
 github.com/google/uuid v1.1.1/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
-github.com/jasonjoo2010/goschedule v0.0.0-20210516080810-02f9975abcd9 h1:RXNsMMhL1bEYeUmYEZP6Iai+RDqel/r4ufHgtMZMoRE=
-github.com/jasonjoo2010/goschedule v0.0.0-20210516080810-02f9975abcd9/go.mod h1:2lGkjCWMVbM3wFPw3a39gfhieEdkzvExunDkdqzzv+M=
+github.com/jasonjoo2010/goschedule v1.0.0 h1:XXGPlVGA01hVdC/imggyilIAw2HEg/nxnGIeV1Zd6A8=
+github.com/jasonjoo2010/goschedule v1.0.0/go.mod h1:2lGkjCWMVbM3wFPw3a39gfhieEdkzvExunDkdqzzv+M=
 github.com/json-iterator/go v1.1.11 h1:uVUAXhF2To8cbw/3xN3pxj6kk7TYKs98NIrTqPlMWAQ=
 github.com/json-iterator/go v1.1.11/go.mod h1:KdQUCv79m/52Kvf8AW2vK1V8akMuk1QjK/uOdHXbAo4=
 github.com/konsorten/go-windows-terminal-sequences v1.0.3/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
