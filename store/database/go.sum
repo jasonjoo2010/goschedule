@@ -25,8 +25,8 @@ github.com/jasonjoo2010/enhanced-utils v0.0.0-20200603160505-ca106040678a h1:97B
 github.com/jasonjoo2010/enhanced-utils v0.0.0-20200603160505-ca106040678a/go.mod h1:u7jbH8cHV/qrM/1UuUtt++0AGthHQUWiNlYDbfJkCL8=
 github.com/jasonjoo2010/godao v0.0.5 h1:KMowUoI+MungwJYh3/Fz8+A6GFGJJQX/vLqpu6gOS2o=
 github.com/jasonjoo2010/godao v0.0.5/go.mod h1:qwBMjTNLSoC22lD/v2Mad2bhoTwjhGG6dIr4mFaryUc=
-github.com/jasonjoo2010/goschedule v1.0.0 h1:XXGPlVGA01hVdC/imggyilIAw2HEg/nxnGIeV1Zd6A8=
-github.com/jasonjoo2010/goschedule v1.0.0/go.mod h1:2lGkjCWMVbM3wFPw3a39gfhieEdkzvExunDkdqzzv+M=
+github.com/jasonjoo2010/goschedule v1.1.0 h1:eyoCB9K1w9vwbHsCOJ/l7rAkvQGvg8G3Loh6a9lPng8=
+github.com/jasonjoo2010/goschedule v1.1.0/go.mod h1:2lGkjCWMVbM3wFPw3a39gfhieEdkzvExunDkdqzzv+M=
 github.com/json-iterator/go v1.1.6/go.mod h1:+SdeFBvtyEkXs7REEP0seUULqWtbJapLOCVDaaPEHmU=
 github.com/julienschmidt/httprouter v1.2.0/go.mod h1:SYymIcj16QtmaHHD7aYtjjsJG7VTCxuUUipMqKk8s4w=
 github.com/konsorten/go-windows-terminal-sequences v1.0.1/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=

@@ -1,8 +1,8 @@
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/google/uuid v1.1.1/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
-github.com/jasonjoo2010/goschedule v1.0.0 h1:XXGPlVGA01hVdC/imggyilIAw2HEg/nxnGIeV1Zd6A8=
-github.com/jasonjoo2010/goschedule v1.0.0/go.mod h1:2lGkjCWMVbM3wFPw3a39gfhieEdkzvExunDkdqzzv+M=
+github.com/jasonjoo2010/goschedule v1.1.0 h1:eyoCB9K1w9vwbHsCOJ/l7rAkvQGvg8G3Loh6a9lPng8=
+github.com/jasonjoo2010/goschedule v1.1.0/go.mod h1:2lGkjCWMVbM3wFPw3a39gfhieEdkzvExunDkdqzzv+M=
 github.com/konsorten/go-windows-terminal-sequences v1.0.3/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/robfig/cron/v3 v3.0.0/go.mod h1:eQICP3HwyT7UooqI/z+Ov+PtYAWygg1TEWWzGIFLtro=

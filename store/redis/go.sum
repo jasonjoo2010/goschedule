@@ -17,8 +17,8 @@ github.com/google/go-cmp v0.4.0/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/
 github.com/google/uuid v1.1.1 h1:Gkbcsh/GbpXz7lPftLA3P6TYMwjCLYm83jiFQZF/3gY=
 github.com/google/uuid v1.1.1/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
 github.com/hpcloud/tail v1.0.0/go.mod h1:ab1qPbhIpdTxEkNHXyeSf5vhxWSCs/tWer42PpOxQnU=
-github.com/jasonjoo2010/goschedule v1.0.0 h1:XXGPlVGA01hVdC/imggyilIAw2HEg/nxnGIeV1Zd6A8=
-github.com/jasonjoo2010/goschedule v1.0.0/go.mod h1:2lGkjCWMVbM3wFPw3a39gfhieEdkzvExunDkdqzzv+M=
+github.com/jasonjoo2010/goschedule v1.1.0 h1:eyoCB9K1w9vwbHsCOJ/l7rAkvQGvg8G3Loh6a9lPng8=
+github.com/jasonjoo2010/goschedule v1.1.0/go.mod h1:2lGkjCWMVbM3wFPw3a39gfhieEdkzvExunDkdqzzv+M=
 github.com/konsorten/go-windows-terminal-sequences v1.0.3/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
 github.com/nxadm/tail v1.4.4/go.mod h1:kenIhsEOeOJmVchQTgglprH7qJGnHDVpk1VPCcaMI8A=
 github.com/onsi/ginkgo v1.6.0/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+WWjE=
