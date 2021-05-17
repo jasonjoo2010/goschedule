@@ -8,7 +8,7 @@ GoSchedule is an in-process scheduler. It's modularized, efficient, high availab
 
 A web based console [goschedule-console](https://github.com/jasonjoo2010/goschedule-console) is provided as an easy to use operating panel to review runtimes/statistics, manage tasks/strategies/schedulers and manage data of storage.  
 
-The first version of GoSchedule is implemented based on `tbschedule` which comes from Taobao®. Tbschedule became opensouce in 2011~2013 and stopped updating then. For an alternated please refer to [tbschedule](https://github.com/jasonjoo2010/tbschedule).  
+The first version of GoSchedule is implemented based on `tbschedule` which comes from Taobao®. Tbschedule became opensource in 2011~2013 and stopped updating then. For an alternated please refer to [tbschedule](https://github.com/jasonjoo2010/tbschedule).  
 
 The overview of design:  
 
@@ -111,7 +111,7 @@ FuncWorker works perfectly in scenarios implementing simple and repeated logic w
 
 TaskWorker is a more complicated and powerful framework for select()->execute() like jobs. Partitioning can be easily configured.  
 
-For more detail on design or explaination please refer to [Workers](WORKERS.md).
+For more detail on design or explanation please refer to [Workers](WORKERS.md).
 
 #### TaskItem of TaskWorker
 
@@ -129,7 +129,7 @@ For more details please refer to [MODELS](MODELS.md).
 
 ### Load balancing
 
-Your workers are distributed between nodes that can be scheduled on. The `balancing` has a meaning in two dimentions: In same strategy and over strategies.  
+Your workers are distributed between nodes that can be scheduled on. The `balancing` has a meaning in two dimensions: In same strategy and over strategies.  
 
 In the same strategy, requested count of worker are well distributed based on nodes. But if you have more single-worker strategy there may be still unbalanced. So a shuffling is introduced when rescheduling to optimize balancing over strategies.
 

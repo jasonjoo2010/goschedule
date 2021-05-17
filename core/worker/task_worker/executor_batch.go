@@ -8,12 +8,13 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jasonjoo2010/goschedule/types"
 	"github.com/sirupsen/logrus"
 )
 
 type BatchExecutor struct {
 	worker *TaskWorker
-	task   TaskBatch
+	task   types.TaskBatch
 	pool   sync.Pool
 }
 

@@ -7,12 +7,13 @@ package task_worker
 import (
 	"time"
 
+	"github.com/jasonjoo2010/goschedule/types"
 	"github.com/sirupsen/logrus"
 )
 
 type SingleExecutor struct {
 	worker *TaskWorker
-	task   TaskSingle
+	task   types.TaskSingle
 }
 
 func (m *SingleExecutor) execute(item interface{}) {

@@ -25,37 +25,11 @@ var (
 	taskRegistryMap sync.Map
 )
 
-// TaskBase defines the task used in scheduling.
-type TaskBase interface {
-	// Select returns tasks to be dealed later.
-	//	It will be guaranteed in serial model.
-	//	parameter, items, eachFetchNum are from definition of task
-	//	ownSign is from name of strategy binded in the form of 'name$ownsign'
-	//	It's a kind of relation to strategy but generally task doesn't care about strategy in user's view.
-	Select(parameter, ownSign string, items []definition.TaskItem, eachFetchNum int) []interface{}
-}
-
-// TaskSingle represents one task one time(routine) model
-type TaskSingle interface {
-	TaskBase
-	// return true if succ false otherwise, but things will still go on
-	Execute(task interface{}, ownSign string) bool
-}
-
-// TaskBatch represents multiple tasks one time(routine) model
-type TaskBatch interface {
-	TaskBase
-	// return true if succ false otherwise, but things will still go on
-	Execute(tasks []interface{}, ownSign string) bool
-}
-
-type TaskComparable interface {
-	Less(a, b interface{}) bool
-}
-
 // TaskWorker implements a task-driven worker.
 //	Strategy.Bind should be the identifier of task(on console panel).
 type TaskWorker struct {
+	types.Worker
+
 	mu             sync.Mutex
 	selectLock     sync.Mutex
 	parameter      string
@@ -72,7 +46,7 @@ type TaskWorker struct {
 	queuedData     []interface{}
 	model          TaskModel
 	executor       TaskExecutor
-	task           TaskBase
+	task           types.TaskBase
 	executors      int32
 	schedStart     cron.Schedule
 	schedEnd       cron.Schedule
@@ -89,15 +63,15 @@ type TaskWorker struct {
 	Statistics    definition.Statistics
 }
 
-func getTaskFromType(t reflect.Type) TaskBase {
-	if v, ok := reflect.New(t).Interface().(TaskBase); ok {
+func getTaskFromType(t reflect.Type) types.TaskBase {
+	if v, ok := reflect.New(t).Interface().(types.TaskBase); ok {
 		return v
 	}
 	logrus.Warn("Entry registered is not a convertable type: ", t)
 	return nil
 }
 
-func getTask(name string) TaskBase {
+func getTask(name string) types.TaskBase {
 	var (
 		ok bool
 		v  interface{}
@@ -110,7 +84,7 @@ func getTask(name string) TaskBase {
 	if ok {
 		return getTaskFromType(t)
 	}
-	val, ok := v.(TaskBase)
+	val, ok := v.(types.TaskBase)
 	if ok {
 		return val
 	}
@@ -119,7 +93,7 @@ func getTask(name string) TaskBase {
 }
 
 // RegisterTaskType registers a task type with key inferred by its type
-func RegisterTaskType(task TaskBase) {
+func RegisterTaskType(task types.TaskBase) {
 	if task == nil {
 		panic("Could not register a task using nil as value")
 	}
@@ -127,7 +101,7 @@ func RegisterTaskType(task TaskBase) {
 }
 
 // RegisterTaskTypeName registers a task type with key
-func RegisterTaskTypeName(name string, task TaskBase) {
+func RegisterTaskTypeName(name string, task types.TaskBase) {
 	if name == "" {
 		panic("Could not register a task using empty name")
 	}
@@ -140,12 +114,12 @@ func RegisterTaskTypeName(name string, task TaskBase) {
 }
 
 // RegisterTaskInst registers a task in single instance model with key inferred by its type
-func RegisterTaskInst(task TaskBase) {
+func RegisterTaskInst(task types.TaskBase) {
 	RegisterTaskInstName(utils.TypeName(task), task)
 }
 
 // RegisterTaskInstName registers a task in single instance model with given key
-func RegisterTaskInstName(name string, task TaskBase) {
+func RegisterTaskInstName(name string, task types.TaskBase) {
 	taskRegistryMap.Store(name, task)
 	logrus.Info("Register a task instance: ", name)
 }
@@ -153,7 +127,7 @@ func RegisterTaskInstName(name string, task TaskBase) {
 // NewTask creates a new task and initials necessary fields
 //	Please don't initial TaskWorker manually
 func NewTask(strategy definition.Strategy, task definition.Task, store store.Store, schedulerId string) (types.Worker, error) {
-	var inst TaskBase
+	var inst types.TaskBase
 	sequence, err := store.Sequence()
 	if err != nil {
 		logrus.Error("Generate sequence from storage failed: ", err.Error())
@@ -202,7 +176,7 @@ func NewTask(strategy definition.Strategy, task definition.Task, store store.Sto
 		w.model = NewNormalModel(w)
 	}
 	if w.taskDefine.BatchCount > 1 {
-		t, ok := inst.(TaskBatch)
+		t, ok := inst.(types.TaskBatch)
 		if !ok {
 			return nil, errors.New("Specific bind is not a TaskBatch: " + task.Bind)
 		}
@@ -216,7 +190,7 @@ func NewTask(strategy definition.Strategy, task definition.Task, store store.Sto
 			},
 		}
 	} else {
-		t, ok := inst.(TaskSingle)
+		t, ok := inst.(types.TaskSingle)
 		if !ok {
 			return nil, errors.New("Specific bind is not a TaskSingle: " + task.Bind)
 		}
