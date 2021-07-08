@@ -11,7 +11,7 @@ import (
 
 	"github.com/jasonjoo2010/goschedule/store"
 	"github.com/labstack/gommon/log"
-	etcd "go.etcd.io/etcd/v3/clientv3"
+	etcd "go.etcd.io/etcd/client/v3"
 )
 
 func toStr(obj interface{}) (string, error) {

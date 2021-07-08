@@ -17,7 +17,7 @@ import (
 	"github.com/jasonjoo2010/goschedule/definition"
 	"github.com/jasonjoo2010/goschedule/log"
 	"github.com/jasonjoo2010/goschedule/store"
-	etcd "go.etcd.io/etcd/v3/clientv3"
+	etcd "go.etcd.io/etcd/client/v3"
 )
 
 type Etcdv3Store struct {
