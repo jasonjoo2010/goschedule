@@ -31,18 +31,18 @@ func (w *logrusWrapper) Errorf(fmt string, args ...interface{}) {
 	logrus.Errorf(fmt, args...)
 }
 
-func (w *logrusWrapper) Debug(fmt string) {
-	logrus.Debugf(fmt)
+func (w *logrusWrapper) Debug(args ...interface{}) {
+	logrus.Debug(args...)
 }
 
-func (w *logrusWrapper) Info(fmt string) {
-	logrus.Infof(fmt)
+func (w *logrusWrapper) Info(args ...interface{}) {
+	logrus.Info(args...)
 }
 
-func (w *logrusWrapper) Warn(fmt string) {
-	logrus.Warnf(fmt)
+func (w *logrusWrapper) Warn(args ...interface{}) {
+	logrus.Warn(args...)
 }
 
-func (w *logrusWrapper) Error(fmt string) {
-	logrus.Errorf(fmt)
+func (w *logrusWrapper) Error(args ...interface{}) {
+	logrus.Error(args...)
 }

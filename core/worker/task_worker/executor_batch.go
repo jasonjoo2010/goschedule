@@ -8,7 +8,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jasonjoo2010/goschedule/log"
 	"github.com/jasonjoo2010/goschedule/types"
+	"github.com/jasonjoo2010/goschedule/utils"
 	"github.com/sirupsen/logrus"
 )
 
@@ -26,6 +28,9 @@ func (m *BatchExecutor) execute(items []interface{}) {
 	defer func() {
 		if r := recover(); r != nil {
 			logrus.Error("Execute error: ", r)
+			traceData := utils.StackTraceData()
+			defer traceData.Recycle()
+			log.Error("Trace: ", traceData.String())
 			succ = false
 		}
 		m.worker.Statistics.Execute(succ, cost)
