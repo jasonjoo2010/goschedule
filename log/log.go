@@ -5,10 +5,10 @@ var inst = NewLogrusWrapper()
 // Wrapper defines the interface used in project to make it able to integrate with different loggers
 type Wrapper interface {
 	Name() string
-	Debug(fmt string)
-	Info(fmt string)
-	Warn(fmt string)
-	Error(fmt string)
+	Debug(args ...interface{})
+	Info(args ...interface{})
+	Warn(args ...interface{})
+	Error(args ...interface{})
 	Debugf(fmt string, args ...interface{})
 	Infof(fmt string, args ...interface{})
 	Warnf(fmt string, args ...interface{})
@@ -49,21 +49,21 @@ func Errorf(fmt string, args ...interface{}) {
 }
 
 // Debug is a convenient scaffold for debug logs
-func Debug(fmt string) {
-	inst.Debug(fmt)
+func Debug(args ...interface{}) {
+	inst.Debug(args...)
 }
 
 // Info is a convenient scaffold for information logs
-func Info(fmt string) {
-	inst.Info(fmt)
+func Info(args ...interface{}) {
+	inst.Info(args...)
 }
 
 // Warn is a convenient scaffold for warning logs
-func Warn(fmt string) {
-	inst.Warn(fmt)
+func Warn(args ...interface{}) {
+	inst.Warn(args...)
 }
 
 // Error is a convenient scaffold for error logs
-func Error(fmt string) {
-	inst.Error(fmt)
+func Error(args ...interface{}) {
+	inst.Error(args...)
 }

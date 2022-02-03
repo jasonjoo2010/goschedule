@@ -7,7 +7,9 @@ package task_worker
 import (
 	"time"
 
+	"github.com/jasonjoo2010/goschedule/log"
 	"github.com/jasonjoo2010/goschedule/types"
+	"github.com/jasonjoo2010/goschedule/utils"
 	"github.com/sirupsen/logrus"
 )
 
@@ -24,6 +26,9 @@ func (m *SingleExecutor) execute(item interface{}) {
 	defer func() {
 		if r := recover(); r != nil {
 			logrus.Error("Execute error: ", r)
+			traceData := utils.StackTraceData()
+			defer traceData.Recycle()
+			log.Error("Trace: ", traceData.String())
 			succ = false
 		}
 		m.worker.Statistics.Execute(succ, cost)

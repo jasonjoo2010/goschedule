@@ -262,6 +262,9 @@ func (manager *ScheduleManager) stopWorkers(strategy *definition.Strategy) error
 			defer func() {
 				if err := recover(); err != nil {
 					log.Errorf("Stop worker %s failed: %v", strategy.ID, err)
+					traceData := utils.StackTraceData()
+					defer traceData.Recycle()
+					log.Error("Trace: ", traceData.String())
 				}
 			}()
 			w.Stop(strategy.ID, strategy.Parameter)

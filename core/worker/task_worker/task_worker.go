@@ -240,6 +240,9 @@ func (w *TaskWorker) selectOnce() {
 	defer func() {
 		if r := recover(); r != nil {
 			logrus.Error("Selecting error: ", r)
+			traceData := utils.StackTraceData()
+			defer traceData.Recycle()
+			log.Error("Trace: ", traceData.String())
 		}
 		if utils.ContextDone(w.ctx) {
 			// notify blocking routines
